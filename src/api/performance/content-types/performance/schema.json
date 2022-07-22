@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "performances",
+  "info": {
+    "singularName": "performance",
+    "pluralName": "performances",
+    "displayName": "Performance"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "datetime",
+      "required": true
+    },
+    "done": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "performance_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::performance-activity.performance-activity",
+      "mappedBy": "performance"
+    }
+  }
+}

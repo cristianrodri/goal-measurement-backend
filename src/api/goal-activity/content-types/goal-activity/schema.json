@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "goal_activities",
+  "info": {
+    "singularName": "goal-activity",
+    "pluralName": "goal-activities",
+    "displayName": "GoalActivity",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "monday": {
+      "type": "boolean",
+      "required": true
+    },
+    "tuesday": {
+      "type": "boolean",
+      "required": true
+    },
+    "wednesday": {
+      "type": "boolean",
+      "required": true
+    },
+    "thrursday": {
+      "type": "boolean",
+      "required": true
+    },
+    "friday": {
+      "type": "boolean",
+      "required": true
+    },
+    "saturday": {
+      "type": "boolean",
+      "required": true
+    },
+    "sunday": {
+      "type": "boolean",
+      "required": true
+    },
+    "goal": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::goal.goal",
+      "inversedBy": "goal_activities"
+    }
+  }
+}

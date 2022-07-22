@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "performance_activities",
+  "info": {
+    "singularName": "performance-activity",
+    "pluralName": "performance-activities",
+    "displayName": "PerformanceActivity",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "done": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "performance": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::performance.performance",
+      "inversedBy": "performance_activities"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "required": true
+    }
+  }
+}

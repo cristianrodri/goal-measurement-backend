@@ -1,0 +1,73 @@
+{
+  "kind": "collectionType",
+  "collectionName": "goals",
+  "info": {
+    "singularName": "goal",
+    "pluralName": "goals",
+    "displayName": "Goal",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "shortDescription": {
+      "type": "string",
+      "required": true,
+      "minLength": 2,
+      "maxLength": 60
+    },
+    "bigDescription": {
+      "type": "text",
+      "minLength": 2,
+      "maxLength": 1000,
+      "required": true
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "deadline": {
+      "type": "datetime",
+      "required": true
+    },
+    "finalReward": {
+      "type": "string",
+      "required": false,
+      "minLength": 2,
+      "maxLength": 60
+    },
+    "weeklyRewardDone": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "goals"
+    },
+    "goal_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::goal-activity.goal-activity",
+      "mappedBy": "goal"
+    },
+    "weeklyRewardDay": {
+      "type": "enumeration",
+      "enum": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thrusday",
+        "friday",
+        "saturday",
+        "sunday"
+      ],
+      "required": true
+    }
+  }
+}
