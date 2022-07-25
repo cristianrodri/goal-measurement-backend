@@ -30,6 +30,7 @@ export default {
     ]
   },
   bootstrap(app) {
+    // eslint-disable-next-line
     console.log(app)
   }
 }

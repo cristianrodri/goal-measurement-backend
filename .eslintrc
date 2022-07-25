@@ -1,5 +1,4 @@
 {
-  "parser": "babel-eslint",
   "extends": ["eslint:recommended", "prettier"],
   "env": {
     "commonjs": true,
@@ -18,7 +17,6 @@
     "strapi": true
   },
   "rules": {
-    // "indent": ["error", 2, { "SwitchCase": 1 }],
     "linebreak-style": ["error", "unix"],
     "no-console": "warn"
   }
