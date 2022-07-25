@@ -1,9 +1,9 @@
-'use strict';
+'use strict'
 
 /**
  * reward router.
  */
 
-const { createCoreRouter } = require('@strapi/strapi').factories;
+const { createCoreRouter } = require('@strapi/strapi').factories
 
-module.exports = createCoreRouter('api::reward.reward');
+module.exports = createCoreRouter('api::reward.reward')

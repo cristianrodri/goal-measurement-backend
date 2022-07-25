@@ -1,15 +1,15 @@
 module.exports = ({ env }) => ({
   email: {
     config: {
-      provider: "sendgrid",
+      provider: 'sendgrid',
       providerOptions: {
-        apiKey: env("SENDGRID_API_KEY"),
+        apiKey: env('SENDGRID_API_KEY')
       },
       settings: {
-        defaultFrom: env("SENDGRID_EMAIL"),
-        defaultReplyTo: env("SENDGRID_EMAIL"),
-        testAddress: env("SENDGRID_EMAIL"),
-      },
-    },
-  },
-});
+        defaultFrom: env('SENDGRID_EMAIL'),
+        defaultReplyTo: env('SENDGRID_EMAIL'),
+        testAddress: env('SENDGRID_EMAIL')
+      }
+    }
+  }
+})

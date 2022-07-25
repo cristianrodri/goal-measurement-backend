@@ -19,11 +19,7 @@
     },
     "type": {
       "type": "enumeration",
-      "enum": [
-        "small",
-        "medium",
-        "large"
-      ],
+      "enum": ["small", "medium", "large"],
       "required": true
     },
     "user": {

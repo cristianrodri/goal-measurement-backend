@@ -1,9 +1,11 @@
-'use strict';
+'use strict'
 
 /**
  * performance-activity service.
  */
 
-const { createCoreService } = require('@strapi/strapi').factories;
+const { createCoreService } = require('@strapi/strapi').factories
 
-module.exports = createCoreService('api::performance-activity.performance-activity');
+module.exports = createCoreService(
+  'api::performance-activity.performance-activity'
+)
