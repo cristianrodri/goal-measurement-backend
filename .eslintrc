@@ -11,13 +11,14 @@
       "experimentalObjectRestSpread": true,
       "jsx": false
     },
-    "sourceType": "module"
+    "sourceType": "module",
+    "ecmaVersion": "latest"
   },
   "globals": {
     "strapi": true
   },
   "rules": {
-    "linebreak-style": ["error", "unix"],
+    "no-unused-vars": ["warn", "all"],
     "no-console": "warn"
   }
 }
