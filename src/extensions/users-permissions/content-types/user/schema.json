@@ -74,6 +74,13 @@
       "relation": "oneToMany",
       "target": "api::reward.reward",
       "mappedBy": "user"
+    },
+    "email_tokens": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::email-token.email-token",
+      "private": true,
+      "mappedBy": "user"
     }
   }
 }
