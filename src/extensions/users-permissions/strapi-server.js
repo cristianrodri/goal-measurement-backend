@@ -60,11 +60,38 @@ module.exports = plugin => {
     }
   }
 
+  // Update email controller
+  plugin.controllers.user.updateEmail = async ctx => {
+    const { token, userId } = ctx.request.body
+
+    const tokenEmail = await strapi.entityService.findMany(
+      'api::email-token.email-token',
+      {
+        filters: {
+          token,
+          user: +userId
+        }
+      }
+    )
+
+    ctx.send(tokenEmail)
+  }
+
   // Update email confirmation route
   plugin.routes['content-api'].routes.push({
     method: 'POST',
     path: '/user/updateEmailConfirmation',
     handler: 'user.updateEmailConfirmation',
+    config: {
+      prefix: ''
+    }
+  })
+
+  // Update email route
+  plugin.routes['content-api'].routes.push({
+    method: 'PUT',
+    path: '/user/updateEmail',
+    handler: 'user.updateEmail',
     config: {
       prefix: ''
     }
