@@ -13,6 +13,9 @@ module.exports = plugin => {
     // Verify if the params id owns to the authenticated user
     if (isNotOwnUser(ctx.state, ctx.params)) return ctx.forbidden()
 
+    // Avoid updating email from this controller
+    delete ctx.request.body?.email
+
     await update(ctx)
   }
 
