@@ -1,7 +1,10 @@
 const {
   update
 } = require('@strapi/plugin-users-permissions/server/controllers/user')
+const utils = require('@strapi/utils')
 const crypto = require('crypto')
+
+const { ApplicationError } = utils.errors
 
 const isNotOwnUser = (ctxState, ctxParams) => {
   return ctxState.user.id !== +ctxParams.id
@@ -21,7 +24,26 @@ module.exports = plugin => {
 
   // Update email confirmation controller
   plugin.controllers.user.updateEmailConfirmation = async ctx => {
-    // Send email confirmation
+    const advancedConfigs = await strapi
+      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
+      .get()
+
+    if (!ctx.request.body?.email) {
+      throw new ApplicationError('Email should be provided')
+    }
+
+    ctx.request.body.email = ctx.request.body.email.toLowerCase().trim()
+
+    if (advancedConfigs.unique_email) {
+      const userWithSameEmail = await strapi
+        .query('plugin::users-permissions.user')
+        .findOne({ where: { email: email.toLowerCase() } })
+
+      if (userWithSameEmail) {
+        throw new ApplicationError('Email already taken')
+      }
+    }
+
     const { email } = ctx.request.body
     const { id: userId } = ctx.state.user
 
@@ -51,7 +73,7 @@ module.exports = plugin => {
       const clientUrl = settings.email_confirmation_redirection
 
       await strapi.plugins['email'].services.email.send({
-        to: email.trim(),
+        to: email,
         from: process.env.SENDGRID_EMAIL,
         subject: 'Email confirmation',
         text: `
@@ -64,7 +86,7 @@ module.exports = plugin => {
 
       ctx.send({
         success: true,
-        message: 'An email confirmation has been sent to ' + email.trim()
+        message: 'An email confirmation has been sent to ' + email
       })
     } catch (error) {
       ctx.badRequest(error.message)
