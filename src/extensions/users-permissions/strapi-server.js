@@ -38,6 +38,7 @@ module.exports = plugin => {
         {
           data: {
             token: crypto.randomBytes(20).toString('hex'),
+            newEmail: email,
             user: +userId
           }
         }
@@ -74,7 +75,7 @@ module.exports = plugin => {
   plugin.controllers.user.updateEmail = async ctx => {
     const { token, userId } = ctx.request.body
 
-    const tokenEmail = await strapi.entityService.findMany(
+    const tokenEmails = await strapi.entityService.findMany(
       'api::email-token.email-token',
       {
         filters: {
@@ -84,7 +85,7 @@ module.exports = plugin => {
       }
     )
 
-    ctx.send(tokenEmail)
+    ctx.send(tokenEmails)
   }
 
   // Update email confirmation route

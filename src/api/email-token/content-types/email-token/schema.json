@@ -22,6 +22,12 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "email_tokens"
+    },
+    "newEmail": {
+      "type": "email",
+      "maxLength": 100,
+      "minLength": 1,
+      "required": true
     }
   }
 }
