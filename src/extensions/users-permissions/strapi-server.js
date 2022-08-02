@@ -25,23 +25,30 @@ module.exports = plugin => {
     const { email } = ctx.request.body
     const { id: userId } = ctx.state.user
 
-    const tokenEmail = await strapi.entityService.create(
-      'api::email-token.email-token',
-      {
-        data: {
-          token: crypto.randomBytes(20).toString('hex'),
+    try {
+      // Delete previous email token related to this userId
+      await strapi.entityService.deleteMany('api::email-token.email-token', {
+        where: {
           user: +userId
         }
-      }
-    )
+      })
 
-    const settings = await strapi
-      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-      .get()
+      const tokenEmail = await strapi.entityService.create(
+        'api::email-token.email-token',
+        {
+          data: {
+            token: crypto.randomBytes(20).toString('hex'),
+            user: +userId
+          }
+        }
+      )
 
-    const clientUrl = settings.email_confirmation_redirection
+      const settings = await strapi
+        .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
+        .get()
 
-    try {
+      const clientUrl = settings.email_confirmation_redirection
+
       await strapi.plugins['email'].services.email.send({
         to: email.trim(),
         from: process.env.SENDGRID_EMAIL,
