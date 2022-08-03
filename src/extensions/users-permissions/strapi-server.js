@@ -1,6 +1,7 @@
 const {
   update
 } = require('@strapi/plugin-users-permissions/server/controllers/user')
+const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
 const crypto = require('crypto')
 
@@ -8,6 +9,15 @@ const { ApplicationError } = utils.errors
 
 const isNotOwnUser = (ctxState, ctxParams) => {
   return ctxState.user.id !== +ctxParams.id
+}
+
+const deleteEmailToken = async userId => {
+  // Delete previous email token related to this userId
+  await strapi.entityService.deleteMany('api::email-token.email-token', {
+    where: {
+      user: +userId
+    }
+  })
 }
 
 module.exports = plugin => {
@@ -34,26 +44,21 @@ module.exports = plugin => {
 
     ctx.request.body.email = ctx.request.body.email.toLowerCase().trim()
 
-    if (advancedConfigs.unique_email) {
-      const userWithSameEmail = await strapi
-        .query('plugin::users-permissions.user')
-        .findOne({ where: { email: email.toLowerCase() } })
-
-      if (userWithSameEmail) {
-        throw new ApplicationError('Email already taken')
-      }
-    }
-
     const { email } = ctx.request.body
     const { id: userId } = ctx.state.user
 
     try {
-      // Delete previous email token related to this userId
-      await strapi.entityService.deleteMany('api::email-token.email-token', {
-        where: {
-          user: +userId
+      if (advancedConfigs.unique_email) {
+        const userWithSameEmail = await strapi
+          .query('plugin::users-permissions.user')
+          .findOne({ where: { email } })
+
+        if (userWithSameEmail) {
+          throw new ApplicationError('Email already taken')
         }
-      })
+      }
+
+      await deleteEmailToken(userId)
 
       const tokenEmail = await strapi.entityService.create(
         'api::email-token.email-token',
@@ -97,17 +102,37 @@ module.exports = plugin => {
   plugin.controllers.user.updateEmail = async ctx => {
     const { token, userId } = ctx.request.body
 
-    const tokenEmails = await strapi.entityService.findMany(
-      'api::email-token.email-token',
-      {
-        filters: {
-          token,
-          user: +userId
+    try {
+      const tokenEmails = await strapi.entityService.findMany(
+        'api::email-token.email-token',
+        {
+          filters: {
+            token,
+            user: +userId
+          },
+          populate: { user: true }
         }
-      }
-    )
+      )
 
-    ctx.send(tokenEmails)
+      if (tokenEmails.length > 0) {
+        const { user, newEmail } = tokenEmails[0]
+        await getService('user').edit(user.id, { email: newEmail })
+
+        // Delete email token related to this user after a successfully updated
+        await deleteEmailToken(user.id)
+
+        ctx.send({
+          success: true,
+          message: 'You email was updated successfully'
+        })
+
+        return
+      }
+
+      ctx.notFound('Email token was not found')
+    } catch (error) {
+      ctx.badRequest(error.message)
+    }
   }
 
   // Update email confirmation route
