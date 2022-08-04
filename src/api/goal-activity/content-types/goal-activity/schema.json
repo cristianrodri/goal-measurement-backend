@@ -51,6 +51,13 @@
       "relation": "manyToOne",
       "target": "api::goal.goal",
       "inversedBy": "goal_activities"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "private": true,
+      "inversedBy": "goal_activities"
     }
   }
 }

@@ -4,7 +4,8 @@
   "info": {
     "singularName": "performance",
     "pluralName": "performances",
-    "displayName": "Performance"
+    "displayName": "Performance",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -25,6 +26,13 @@
       "relation": "oneToMany",
       "target": "api::performance-activity.performance-activity",
       "mappedBy": "performance"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "private": true,
+      "inversedBy": "performances"
     }
   }
 }

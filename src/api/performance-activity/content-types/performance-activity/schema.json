@@ -28,6 +28,13 @@
       "minLength": 2,
       "maxLength": 60,
       "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "private": true,
+      "inversedBy": "performance_activities"
     }
   }
 }

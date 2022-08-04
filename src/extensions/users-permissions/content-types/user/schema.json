@@ -81,6 +81,24 @@
       "target": "api::email-token.email-token",
       "private": true,
       "mappedBy": "user"
+    },
+    "goal_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::goal-activity.goal-activity",
+      "mappedBy": "user"
+    },
+    "performances": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::performance.performance",
+      "mappedBy": "user"
+    },
+    "performance_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::performance-activity.performance-activity",
+      "mappedBy": "user"
     }
   }
 }
