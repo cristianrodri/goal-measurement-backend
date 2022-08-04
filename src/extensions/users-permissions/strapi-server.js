@@ -5,7 +5,7 @@ const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
 const crypto = require('crypto')
 
-const { ApplicationError } = utils.errors
+const { ApplicationError, ValidationError } = utils.errors
 
 const isNotOwnUser = (ctxState, ctxParams) => {
   return ctxState.user.id !== +ctxParams.id
@@ -135,6 +135,31 @@ module.exports = plugin => {
     }
   }
 
+  // Update password controller
+  plugin.controllers.user.updatePassword = async ctx => {
+    const { currentPassword, newPassword, newPasswordConfirmation } =
+      ctx.request.body
+    const { user } = ctx.state
+
+    if (newPassword !== newPasswordConfirmation) {
+      throw new ValidationError('Passwords do not match')
+    }
+
+    // Verify the current password
+    const validPassword = await getService('user').validatePassword(
+      currentPassword,
+      user.password
+    )
+
+    if (!validPassword) {
+      throw new ValidationError('Invalid password')
+    }
+
+    await getService('user').edit(user.id, { password: newPassword })
+
+    ctx.send({ success: true, message: 'Password updated successfully' })
+  }
+
   // Update email confirmation route
   plugin.routes['content-api'].routes.push({
     method: 'POST',
@@ -150,6 +175,16 @@ module.exports = plugin => {
     method: 'PUT',
     path: '/user/updateEmail',
     handler: 'user.updateEmail',
+    config: {
+      prefix: ''
+    }
+  })
+
+  // Update password route
+  plugin.routes['content-api'].routes.push({
+    method: 'PUT',
+    path: '/user/updatePassword',
+    handler: 'user.updatePassword',
     config: {
       prefix: ''
     }
