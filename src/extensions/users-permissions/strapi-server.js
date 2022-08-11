@@ -3,7 +3,8 @@ const {
 } = require('@strapi/plugin-users-permissions/server/controllers/user')
 const {
   validateRegisterBody,
-  validateCallbackBody
+  validateCallbackBody,
+  validateEmailConfirmationBody
 } = require('@strapi/plugin-users-permissions/server/controllers/validation/auth')
 const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
@@ -24,8 +25,22 @@ const isNotOwnUser = (ctxState, ctxParams) => {
   return ctxState.user.id !== +ctxParams.id
 }
 
+const createEmailToken = async (email, userId, token) => {
+  const tokenEmail = await strapi.entityService.create(
+    'api::email-token.email-token',
+    {
+      data: {
+        token: token ?? crypto.randomBytes(20).toString('hex'),
+        newEmail: email,
+        user: +userId
+      }
+    }
+  )
+
+  return tokenEmail
+}
+
 const deleteEmailToken = async userId => {
-  // Delete previous email token related to this userId
   await strapi.entityService.deleteMany('api::email-token.email-token', {
     where: {
       user: +userId
@@ -123,6 +138,12 @@ module.exports = plugin => {
     if (settings.email_confirmation) {
       try {
         await getService('user').sendConfirmationEmail(sanitizedUser)
+
+        const { email, id, confirmationToken } = await getService('user').fetch(
+          sanitizedUser.id
+        )
+
+        await createEmailToken(email, id, confirmationToken)
       } catch (err) {
         throw new ApplicationError(err.message)
       }
@@ -216,6 +237,44 @@ module.exports = plugin => {
     }
   }
 
+  plugin.controllers.auth.emailConfirmation = async (ctx, next, returnUser) => {
+    const { confirmation: confirmationToken } =
+      await validateEmailConfirmationBody(ctx.query)
+
+    const userService = getService('user')
+    const jwtService = getService('jwt')
+
+    const [user] = await userService.fetchAll({
+      filters: { confirmationToken }
+    })
+
+    if (!user) {
+      throw new ValidationError('Invalid token')
+    }
+
+    await userService.edit(user.id, {
+      confirmed: true,
+      confirmationToken: null
+    })
+
+    if (returnUser) {
+      ctx.send({
+        jwt: jwtService.issue({ id: user.id }),
+        user: await sanitizeUser(user, ctx)
+      })
+    } else {
+      const settings = await strapi
+        .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
+        .get()
+
+      ctx.redirect(
+        settings.email_confirmation_redirection
+          ? `${settings.email_confirmation_redirection}/login?confirmation=${confirmationToken}`
+          : '/'
+      )
+    }
+  }
+
   // Update user controller
   plugin.controllers.user.update = async ctx => {
     // Verify if the params id owns to the authenticated user
@@ -254,18 +313,10 @@ module.exports = plugin => {
         }
       }
 
+      // Delete previous email token related to this userId
       await deleteEmailToken(userId)
 
-      const tokenEmail = await strapi.entityService.create(
-        'api::email-token.email-token',
-        {
-          data: {
-            token: crypto.randomBytes(20).toString('hex'),
-            newEmail: email,
-            user: +userId
-          }
-        }
-      )
+      const tokenEmail = await createEmailToken(email, userId)
 
       const settings = await strapi
         .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
