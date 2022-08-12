@@ -68,6 +68,18 @@
         "sunday"
       ],
       "required": true
+    },
+    "performances": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::performance.performance",
+      "mappedBy": "goal"
+    },
+    "performance_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::performance-activity.performance-activity",
+      "mappedBy": "goal"
     }
   }
 }

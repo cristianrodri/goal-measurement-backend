@@ -35,6 +35,12 @@
       "target": "plugin::users-permissions.user",
       "private": true,
       "inversedBy": "performance_activities"
+    },
+    "goal": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::goal.goal",
+      "inversedBy": "performance_activities"
     }
   }
 }
