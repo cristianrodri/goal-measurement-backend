@@ -407,6 +407,18 @@ module.exports = plugin => {
     ctx.send({ success: true, message: 'Password updated successfully' })
   }
 
+  // Delete user controller
+  plugin.controllers.user.destroy = async ctx => {
+    // Verify if the params id owns to the authenticated user
+    if (isNotOwnUser(ctx.state, ctx.params)) return ctx.forbidden()
+
+    const { id } = ctx.params
+
+    await getService('user').remove({ id })
+
+    ctx.send({ success: true })
+  }
+
   // Update email confirmation route
   plugin.routes['content-api'].routes.push({
     method: 'POST',
