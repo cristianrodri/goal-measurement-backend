@@ -27,7 +27,7 @@
     "completed": {
       "type": "boolean",
       "default": false,
-      "required": true
+      "required": false
     },
     "deadline": {
       "type": "datetime",
@@ -42,7 +42,7 @@
     "weeklyRewardDone": {
       "type": "boolean",
       "default": true,
-      "required": true
+      "required": false
     },
     "user": {
       "type": "relation",
