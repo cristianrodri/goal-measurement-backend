@@ -20,31 +20,38 @@
     },
     "monday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "tuesday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "wednesday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "thursday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "friday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "saturday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "sunday": {
       "type": "boolean",
-      "required": true
+      "required": false,
+      "default": false
     },
     "goal": {
       "type": "relation",
