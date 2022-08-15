@@ -6,6 +6,10 @@
 
 const { createCoreController } = require('@strapi/strapi').factories
 
+const goalNotFound = ctx => {
+  ctx.notFound('Goal not found with this related user')
+}
+
 module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   async create(ctx) {
     ctx.request.body = { ...ctx.request.body, user: ctx.state.user }
@@ -65,10 +69,28 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     })
 
     if (entities.length === 0) {
-      return ctx.notFound('Goal not found with this related user')
+      return goalNotFound(ctx)
     }
 
     const sanitizedEntity = await this.sanitizeOutput(entities[0], ctx)
+
+    return sanitizedEntity
+  },
+  async update(ctx) {
+    const { id } = ctx.params
+    const entities = await this.find(ctx)
+
+    if (entities.length === 0) {
+      return goalNotFound(ctx)
+    }
+
+    const entity = await strapi.entityService.update('api::goal.goal', id, {
+      data: {
+        ...ctx.request.body
+      }
+    })
+
+    const sanitizedEntity = await this.sanitizeOutput(entity, ctx)
 
     return sanitizedEntity
   }
