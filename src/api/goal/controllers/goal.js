@@ -36,5 +36,14 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     )
 
     ctx.send({ ...goal, goalActivities: goalActivitiesEntities })
+  },
+  async find(ctx) {
+    const entries = await strapi.entityService.findMany('api::goal.goal', {
+      filters: {
+        user: ctx.state.user
+      }
+    })
+
+    ctx.body = entries
   }
 }))
