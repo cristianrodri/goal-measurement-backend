@@ -38,12 +38,38 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     ctx.send({ ...goal, goalActivities: goalActivitiesEntities })
   },
   async find(ctx) {
-    const entries = await strapi.entityService.findMany('api::goal.goal', {
+    const entities = await strapi.entityService.findMany('api::goal.goal', {
       filters: {
         user: ctx.state.user
+      },
+      populate: {
+        goal_activities: true
       }
     })
 
-    ctx.body = entries
+    const sanitizedEntity = await this.sanitizeOutput(entities, ctx)
+
+    return sanitizedEntity
+  },
+  async findOne(ctx) {
+    const { id } = ctx.params
+
+    const entities = await strapi.entityService.findMany('api::goal.goal', {
+      filters: {
+        id,
+        user: ctx.state.user
+      },
+      populate: {
+        goal_activities: true
+      }
+    })
+
+    if (entities.length === 0) {
+      return ctx.notFound('Goal not found with this related user')
+    }
+
+    const sanitizedEntity = await this.sanitizeOutput(entities[0], ctx)
+
+    return sanitizedEntity
   }
 }))
