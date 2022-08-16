@@ -84,6 +84,16 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
       return goalNotFound(ctx)
     }
 
+    // Avoid updating the timestamps and related collections data
+    delete ctx.request.body?.createdAt
+    delete ctx.request.body?.updatedAt
+    delete ctx.request.body?.createdBy
+    delete ctx.request.body?.updatedBy
+    delete ctx.request.body?.user
+    delete ctx.request.body?.goal_activities
+    delete ctx.request.body?.performances
+    delete ctx.request.body?.performance_activities
+
     const entity = await strapi.entityService.update('api::goal.goal', id, {
       data: {
         ...ctx.request.body
