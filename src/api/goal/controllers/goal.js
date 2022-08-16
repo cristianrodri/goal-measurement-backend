@@ -79,6 +79,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   },
   async update(ctx) {
     const { id } = ctx.params
+    const { deadline } = ctx.request.body
     const entities = await this.find(ctx)
 
     if (entities.length === 0) {
@@ -87,6 +88,12 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
 
     // Avoid updating the timestamps and related collections data
     avoidUpdatingSchema(ctx)
+
+    if (deadline && new Date(deadline).getTime() < new Date().getTime()) {
+      return ctx.badRequest(
+        'Your deadline should be greater than the current date'
+      )
+    }
 
     const entity = await strapi.entityService.update('api::goal.goal', id, {
       data: {
