@@ -11,6 +11,20 @@ const goalNotFound = ctx => {
   ctx.notFound('Goal not found with this related user')
 }
 
+const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
+  const entities = await strapi.entityService.findMany('api::goal.goal', {
+    filters: {
+      id: ctx.params.id,
+      user: ctx.state.user
+    },
+    populate: {
+      goal_activities: populateGoalActivities
+    }
+  })
+
+  return entities[0]
+}
+
 module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   async create(ctx) {
     ctx.request.body = { ...ctx.request.body, user: ctx.state.user }
@@ -57,32 +71,22 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     return sanitizedEntity
   },
   async findOne(ctx) {
-    const { id } = ctx.params
+    const goal = await findUserGoal(strapi, ctx, true)
 
-    const entities = await strapi.entityService.findMany('api::goal.goal', {
-      filters: {
-        id,
-        user: ctx.state.user
-      },
-      populate: {
-        goal_activities: true
-      }
-    })
-
-    if (entities.length === 0) {
+    if (!goal) {
       return goalNotFound(ctx)
     }
 
-    const sanitizedEntity = await this.sanitizeOutput(entities[0], ctx)
+    const sanitizedEntity = await this.sanitizeOutput(goal, ctx)
 
     return sanitizedEntity
   },
   async update(ctx) {
     const { id } = ctx.params
     const { deadline } = ctx.request.body
-    const entities = await this.find(ctx)
+    const goal = await findUserGoal(strapi, ctx)
 
-    if (entities.length === 0) {
+    if (!goal) {
       return goalNotFound(ctx)
     }
 
