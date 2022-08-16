@@ -10,6 +10,7 @@ const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
 const crypto = require('crypto')
 const _ = require('lodash')
+const { avoidUpdatingSchema } = require('@utils/utils')
 
 const { sanitize } = utils
 const { ApplicationError, ValidationError } = utils.errors
@@ -283,6 +284,10 @@ module.exports = plugin => {
     // Avoid updating email and password from this controller
     delete ctx.request.body?.email
     delete ctx.request.body?.password
+    delete ctx.request.body?.provider
+
+    // Avoid updating the timestamps and related collections data
+    avoidUpdatingSchema(ctx)
 
     await update(ctx)
   }
