@@ -108,5 +108,19 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     const sanitizedEntity = await this.sanitizeOutput(entity, ctx)
 
     return sanitizedEntity
+  },
+  async delete(ctx) {
+    const { id } = ctx.params
+    const goal = await findUserGoal(strapi, ctx, true)
+
+    if (!goal) {
+      return goalNotFound(ctx)
+    }
+
+    const entity = await strapi.entityService.delete('api::goal.goal', id)
+
+    const sanitizedEntity = await this.sanitizeOutput(entity, ctx)
+
+    return sanitizedEntity
   }
 }))
