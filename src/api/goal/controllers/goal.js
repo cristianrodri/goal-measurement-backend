@@ -5,6 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
+const { avoidUpdatingSchema } = require('@utils/utils')
 
 const goalNotFound = ctx => {
   ctx.notFound('Goal not found with this related user')
@@ -85,14 +86,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     }
 
     // Avoid updating the timestamps and related collections data
-    delete ctx.request.body?.createdAt
-    delete ctx.request.body?.updatedAt
-    delete ctx.request.body?.createdBy
-    delete ctx.request.body?.updatedBy
-    delete ctx.request.body?.user
-    delete ctx.request.body?.goal_activities
-    delete ctx.request.body?.performances
-    delete ctx.request.body?.performance_activities
+    avoidUpdatingSchema(ctx)
 
     const entity = await strapi.entityService.update('api::goal.goal', id, {
       data: {

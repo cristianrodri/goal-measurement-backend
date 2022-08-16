@@ -1,5 +1,7 @@
 'use strict'
 
+require('module-alias/register')
+
 module.exports = {
   /**
    * An asynchronous register function that runs before
