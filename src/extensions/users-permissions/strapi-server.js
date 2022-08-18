@@ -238,6 +238,13 @@ module.exports = plugin => {
     }
   }
 
+  // Override the user find method. Get the one user instead of all users
+  plugin.controllers.user.find = async ctx => {
+    const user = await getService('user').fetch(ctx.state.user.id)
+
+    ctx.send(await sanitizeUser(user, ctx))
+  }
+
   plugin.controllers.auth.emailConfirmation = async (ctx, next, returnUser) => {
     const { confirmation: confirmationToken } =
       await validateEmailConfirmationBody(ctx.query)
