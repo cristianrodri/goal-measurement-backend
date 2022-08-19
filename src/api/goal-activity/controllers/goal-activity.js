@@ -7,6 +7,20 @@
 const { createCoreController } = require('@strapi/strapi').factories
 const { avoidUpdatingSchema } = require('@utils/utils')
 
+const findUserGoal = async (strapi, ctx) => {
+  const entities = await strapi.entityService.findMany(
+    'api::goal-activity.goal-activity',
+    {
+      filters: {
+        id: ctx.params.id,
+        user: ctx.state.user
+      }
+    }
+  )
+
+  return entities[0]
+}
+
 module.exports = createCoreController(
   'api::goal-activity.goal-activity',
   ({ strapi }) => ({
@@ -36,6 +50,20 @@ module.exports = createCoreController(
       )
 
       ctx.body = await this.sanitizeOutput(entity, ctx)
+    },
+    async update(ctx) {
+      avoidUpdatingSchema(ctx)
+      delete ctx.request.body.data.goal
+
+      const userGoal = await findUserGoal(strapi, ctx)
+
+      if (!userGoal) {
+        return ctx.badRequest('Goal id not found')
+      }
+
+      const entity = await super.update(ctx)
+
+      ctx.body = entity
     }
   })
 )
