@@ -5,7 +5,10 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
-const { avoidUpdatingSchema } = require('@utils/utils')
+const {
+  avoidUpdatingSchema,
+  deleteRequestBodyProperties
+} = require('@utils/utils')
 
 const findUserGoal = async (strapi, ctx) => {
   const entities = await strapi.entityService.findMany(
@@ -52,8 +55,8 @@ module.exports = createCoreController(
       ctx.body = await this.sanitizeOutput(entity, ctx)
     },
     async update(ctx) {
-      avoidUpdatingSchema(ctx)
-      delete ctx.request.body.data.goal
+      deleteRequestBodyProperties(ctx.request.body)
+      ctx.request.body = { data: { ...ctx.request.body } }
 
       const userGoal = await findUserGoal(strapi, ctx)
 
