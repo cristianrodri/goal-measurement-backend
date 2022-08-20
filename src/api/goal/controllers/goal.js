@@ -5,7 +5,10 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
-const { avoidUpdatingSchema } = require('@utils/utils')
+const {
+  avoidUpdatingSchema,
+  deleteRequestBodyProperties
+} = require('@utils/utils')
 
 const goalNotFound = ctx => {
   ctx.notFound('Goal not found with this related user')
@@ -27,19 +30,22 @@ const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
 
 module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   async create(ctx) {
-    ctx.request.body = { ...ctx.request.body, user: ctx.state.user }
     const goalActivities = ctx.request.body.goalActivities
 
     delete ctx.request.body.goalActivities
 
     const goal = await strapi.entityService.create('api::goal.goal', {
       data: {
-        ...ctx.request.body
+        ...ctx.request.body,
+        user: ctx.state.user
       }
     })
 
     const goalActivitiesEntities = await Promise.all(
       goalActivities.map(async goalActivity => {
+        // Clean up unnecessary properties
+        deleteRequestBodyProperties(goalActivity)
+
         goalActivity.user = ctx.state.user
         goalActivity.goal = goal
         const entity = await strapi.entityService.create(
@@ -50,11 +56,17 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
             }
           }
         )
+
+        delete entity.createdAt
+        delete entity.updatedAt
+
         return entity
       })
     )
 
-    ctx.send({ ...goal, goalActivities: goalActivitiesEntities })
+    const sanitizedGoal = await this.sanitizeOutput(goal, ctx)
+
+    ctx.body = { ...sanitizedGoal, goalActivities: goalActivitiesEntities }
   },
   async find(ctx) {
     const entities = await strapi.entityService.findMany('api::goal.goal', {

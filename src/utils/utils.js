@@ -1,24 +1,30 @@
-const avoidUpdatingSchema = ctx => {
-  delete ctx.request.body?.createdAt
-  delete ctx.request.body?.updatedAt
-  delete ctx.request.body?.createdBy
-  delete ctx.request.body?.updatedBy
-  delete ctx.request.body?.user
-  delete ctx.request.body?.goal_activities
-  delete ctx.request.body?.performances
-  delete ctx.request.body?.performance_activities
+const deleteRequestBodyProperties = obj => {
+  delete obj?.createdAt
+  delete obj?.updatedAt
+  delete obj?.createdBy
+  delete obj?.updatedBy
+  delete obj?.user
+  delete obj?.goal
+  delete obj?.goal_activities
+  delete obj?.performances
+  delete obj?.performance_activities
 
   // User schema
-  delete ctx.request.body?.resetPasswordToken
-  delete ctx.request.body?.confirmationToken
-  delete ctx.request.body?.confirmed
-  delete ctx.request.body?.blocked
-  delete ctx.request.body?.role
-  delete ctx.request.body?.goals
-  delete ctx.request.body?.rewards
-  delete ctx.request.body?.email_tokens
+  delete obj?.resetPasswordToken
+  delete obj?.confirmationToken
+  delete obj?.confirmed
+  delete obj?.blocked
+  delete obj?.role
+  delete obj?.goals
+  delete obj?.rewards
+  delete obj?.email_tokens
+}
+
+const avoidUpdatingSchema = ctx => {
+  deleteRequestBodyProperties(ctx.request.body)
 }
 
 module.exports = {
-  avoidUpdatingSchema
+  avoidUpdatingSchema,
+  deleteRequestBodyProperties
 }
