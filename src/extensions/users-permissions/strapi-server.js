@@ -164,7 +164,7 @@ module.exports = plugin => {
 
   // Update auth callback controller
   plugin.controllers.auth.callback = async ctx => {
-    const provider = ctx.params.provider.trim() || 'local'
+    const provider = ctx.params.provider || 'local'
     const params = trimmedObj(ctx.request.body)
 
     const store = strapi.store({ type: 'plugin', name: 'users-permissions' })
