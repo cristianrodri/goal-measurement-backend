@@ -7,7 +7,8 @@
 const { createCoreController } = require('@strapi/strapi').factories
 const {
   avoidUpdatingSchema,
-  deleteRequestBodyProperties
+  deleteRequestBodyProperties,
+  trimmedObj
 } = require('@utils/utils')
 
 const goalNotFound = ctx => {
@@ -36,7 +37,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
 
     const goal = await strapi.entityService.create('api::goal.goal', {
       data: {
-        ...ctx.request.body,
+        ...trimmedObj(ctx.request.body),
         user: ctx.state.user
       }
     })
@@ -52,7 +53,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
           'api::goal-activity.goal-activity',
           {
             data: {
-              ...goalActivity
+              ...trimmedObj(goalActivity)
             }
           }
         )
@@ -95,7 +96,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   },
   async update(ctx) {
     const { id } = ctx.params
-    const { deadline } = ctx.request.body
+    const { deadline } = trimmedObj(ctx.request.body)
     const goal = await findUserGoal(strapi, ctx)
 
     if (!goal) {
@@ -113,7 +114,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
 
     const entity = await strapi.entityService.update('api::goal.goal', id, {
       data: {
-        ...ctx.request.body
+        ...trimmedObj(ctx.request.body)
       }
     })
 

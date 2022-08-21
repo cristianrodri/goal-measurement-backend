@@ -10,7 +10,7 @@ const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
 const crypto = require('crypto')
 const _ = require('lodash')
-const { avoidUpdatingSchema } = require('@utils/utils')
+const { avoidUpdatingSchema, trimmedObj } = require('@utils/utils')
 
 const { sanitize } = utils
 const { ApplicationError, ValidationError } = utils.errors
@@ -94,8 +94,10 @@ module.exports = plugin => {
       throw new ApplicationError('Register action is currently disabled')
     }
 
+    avoidUpdatingSchema(ctx)
+
     const params = {
-      ..._.omit(ctx.request.body, [
+      ..._.omit(trimmedObj(ctx.request.body), [
         'confirmed',
         'blocked',
         'confirmationToken',
@@ -162,8 +164,8 @@ module.exports = plugin => {
 
   // Update auth callback controller
   plugin.controllers.auth.callback = async ctx => {
-    const provider = ctx.params.provider || 'local'
-    const params = ctx.request.body
+    const provider = ctx.params.provider.trim() || 'local'
+    const params = trimmedObj(ctx.request.body)
 
     const store = strapi.store({ type: 'plugin', name: 'users-permissions' })
     const grantSettings = await store.get({ key: 'grant' })
@@ -359,7 +361,7 @@ module.exports = plugin => {
 
   // Update email controller
   plugin.controllers.user.updateEmail = async ctx => {
-    const { token, userId } = ctx.request.body
+    const { token, userId } = trimmedObj(ctx.request.body)
 
     try {
       const tokenEmails = await strapi.entityService.findMany(
@@ -397,7 +399,7 @@ module.exports = plugin => {
   // Update password controller
   plugin.controllers.user.updatePassword = async ctx => {
     const { currentPassword, newPassword, newPasswordConfirmation } =
-      ctx.request.body
+      trimmedObj(ctx.request.body)
     const { user } = ctx.state
 
     if (newPassword !== newPasswordConfirmation) {

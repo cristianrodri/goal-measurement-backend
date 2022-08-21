@@ -14,7 +14,7 @@ module.exports = createCoreController(
         .query('api::email-token.email-token')
         .findMany({
           filters: {
-            token: ctx.query.token
+            token: ctx.query.token.trim()
           }
         })
 

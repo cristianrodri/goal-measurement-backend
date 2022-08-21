@@ -7,7 +7,8 @@
 const { createCoreController } = require('@strapi/strapi').factories
 const {
   avoidUpdatingSchema,
-  deleteRequestBodyProperties
+  deleteRequestBodyProperties,
+  trimmedObj
 } = require('@utils/utils')
 
 const findUserGoal = async (strapi, ctx) => {
@@ -29,10 +30,11 @@ module.exports = createCoreController(
   ({ strapi }) => ({
     async create(ctx) {
       avoidUpdatingSchema(ctx)
+      const trimmedRequestBody = trimmedObj(ctx.request.body)
 
       const userGoal = await strapi.entityService.findMany('api::goal.goal', {
         filters: {
-          id: ctx.request.body?.goal ?? null,
+          id: trimmedRequestBody?.goal ?? null,
           user: ctx.state.user
         }
       })
@@ -42,12 +44,12 @@ module.exports = createCoreController(
       }
 
       // Add the relation with the authenticated user
-      ctx.request.body.user = ctx.state.user
+      trimmedRequestBody.user = ctx.state.user
       const entity = await strapi.entityService.create(
         'api::goal-activity.goal-activity',
         {
           data: {
-            ...ctx.request.body
+            ...trimmedRequestBody
           }
         }
       )
@@ -56,7 +58,7 @@ module.exports = createCoreController(
     },
     async update(ctx) {
       deleteRequestBodyProperties(ctx.request.body)
-      ctx.request.body = { data: { ...ctx.request.body } }
+      ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
       const userGoal = await findUserGoal(strapi, ctx)
 

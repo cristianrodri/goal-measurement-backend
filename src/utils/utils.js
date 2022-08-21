@@ -24,7 +24,17 @@ const avoidUpdatingSchema = ctx => {
   deleteRequestBodyProperties(ctx.request.body)
 }
 
+const trimmedObj = obj =>
+  Object.entries(obj).reduce(
+    (prev, curr) =>
+      typeof curr[1] === 'string'
+        ? { ...prev, [curr[0]]: curr[1].trim() }
+        : { ...prev, [curr[0]]: curr[1] },
+    {}
+  )
+
 module.exports = {
   avoidUpdatingSchema,
-  deleteRequestBodyProperties
+  deleteRequestBodyProperties,
+  trimmedObj
 }
