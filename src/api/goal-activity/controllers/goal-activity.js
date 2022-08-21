@@ -11,18 +11,25 @@ const {
   trimmedObj
 } = require('@utils/utils')
 
-const findUserGoal = async (strapi, ctx) => {
+const populate = {
+  goal: {
+    fields: ['id']
+  }
+}
+
+const findUserGoalActivities = async (strapi, ctx) => {
   const entities = await strapi.entityService.findMany(
     'api::goal-activity.goal-activity',
     {
       filters: {
-        id: ctx.params.id,
+        id: ctx.params?.id ?? null,
         user: ctx.state.user
-      }
+      },
+      populate
     }
   )
 
-  return entities[0]
+  return entities
 }
 
 module.exports = createCoreController(
@@ -60,15 +67,37 @@ module.exports = createCoreController(
       deleteRequestBodyProperties(ctx.request.body)
       ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
-      const userGoal = await findUserGoal(strapi, ctx)
+      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
 
-      if (!userGoal) {
-        return ctx.badRequest('Goal id not found')
+      if (!userGoalActivities[0]) {
+        return ctx.badRequest('Goal activity id not found')
       }
 
       const entity = await super.update(ctx)
 
       ctx.body = entity
+    },
+    async findOne(ctx) {
+      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
+
+      if (!userGoalActivities[0]) {
+        return ctx.badRequest('Goal activity id not found')
+      }
+
+      ctx.body = await this.sanitizeOutput(userGoalActivities[0], ctx)
+    },
+    async find(ctx) {
+      const entities = await strapi.entityService.findMany(
+        'api::goal-activity.goal-activity',
+        {
+          filters: {
+            user: ctx.state.user
+          },
+          populate
+        }
+      )
+
+      ctx.body = await this.sanitizeOutput(entities, ctx)
     }
   })
 )
