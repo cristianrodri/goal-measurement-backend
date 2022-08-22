@@ -17,6 +17,8 @@ const populate = {
   }
 }
 
+const notFoundMessage = 'Goal activity not found'
+
 const findUserGoalActivities = async (strapi, ctx) => {
   const entities = await strapi.entityService.findMany(
     'api::goal-activity.goal-activity',
@@ -63,29 +65,6 @@ module.exports = createCoreController(
 
       ctx.body = await this.sanitizeOutput(entity, ctx)
     },
-    async update(ctx) {
-      deleteRequestBodyProperties(ctx.request.body)
-      ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
-
-      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
-
-      if (!userGoalActivities[0]) {
-        return ctx.badRequest('Goal activity id not found')
-      }
-
-      const entity = await super.update(ctx)
-
-      ctx.body = entity
-    },
-    async findOne(ctx) {
-      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
-
-      if (!userGoalActivities[0]) {
-        return ctx.badRequest('Goal activity id not found')
-      }
-
-      ctx.body = await this.sanitizeOutput(userGoalActivities[0], ctx)
-    },
     async find(ctx) {
       const entities = await strapi.entityService.findMany(
         'api::goal-activity.goal-activity',
@@ -98,6 +77,29 @@ module.exports = createCoreController(
       )
 
       ctx.body = await this.sanitizeOutput(entities, ctx)
+    },
+    async findOne(ctx) {
+      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
+
+      if (!userGoalActivities[0]) {
+        return ctx.badRequest(notFoundMessage)
+      }
+
+      ctx.body = await this.sanitizeOutput(userGoalActivities[0], ctx)
+    },
+    async update(ctx) {
+      deleteRequestBodyProperties(ctx.request.body)
+      ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
+
+      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
+
+      if (!userGoalActivities[0]) {
+        return ctx.badRequest(notFoundMessage)
+      }
+
+      const entity = await super.update(ctx)
+
+      ctx.body = entity
     }
   })
 )
