@@ -3,6 +3,7 @@ const deleteRequestBodyProperties = obj => {
   delete obj?.updatedAt
   delete obj?.createdBy
   delete obj?.updatedBy
+  delete obj?.publishedAt
   delete obj?.user
   delete obj?.goal
   delete obj?.goal_activities

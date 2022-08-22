@@ -4,10 +4,12 @@
   "info": {
     "singularName": "reward",
     "pluralName": "rewards",
-    "displayName": "Reward"
+    "displayName": "Reward",
+    "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false,
+    "privateAttributes": ["createdAt", "updatedAt"]
   },
   "pluginOptions": {},
   "attributes": {
