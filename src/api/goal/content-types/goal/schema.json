@@ -81,6 +81,13 @@
       "relation": "oneToMany",
       "target": "api::performance-activity.performance-activity",
       "mappedBy": "goal"
+    },
+    "progress": {
+      "type": "integer",
+      "required": false,
+      "max": 100,
+      "min": 0,
+      "default": 0
     }
   }
 }
