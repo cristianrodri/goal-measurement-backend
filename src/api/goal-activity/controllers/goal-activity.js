@@ -19,7 +19,7 @@ const populate = {
 
 const notFoundMessage = 'Goal activity not found'
 
-const findUserGoalActivities = async (strapi, ctx) => {
+const findUserGoalActivity = async (strapi, ctx) => {
   const entities = await strapi.entityService.findMany(
     'api::goal-activity.goal-activity',
     {
@@ -31,7 +31,18 @@ const findUserGoalActivities = async (strapi, ctx) => {
     }
   )
 
-  return entities
+  return entities[0]
+}
+
+const userGoal = async (strapi, ctx, requestBody) => {
+  const entities = await strapi.entityService.findMany('api::goal.goal', {
+    filters: {
+      id: requestBody?.goal ?? null,
+      user: ctx.state.user
+    }
+  })
+
+  return entities[0]
 }
 
 module.exports = createCoreController(
@@ -41,14 +52,9 @@ module.exports = createCoreController(
       avoidUpdatingSchema(ctx)
       const trimmedRequestBody = trimmedObj(ctx.request.body)
 
-      const userGoal = await strapi.entityService.findMany('api::goal.goal', {
-        filters: {
-          id: trimmedRequestBody?.goal ?? null,
-          user: ctx.state.user
-        }
-      })
+      const goal = await userGoal(strapi, ctx, trimmedRequestBody)
 
-      if (userGoal.length === 0) {
+      if (!goal) {
         return ctx.notFound('Goal id not found')
       }
 
@@ -79,25 +85,36 @@ module.exports = createCoreController(
       ctx.body = await this.sanitizeOutput(entities, ctx)
     },
     async findOne(ctx) {
-      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
+      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
 
-      if (!userGoalActivities[0]) {
-        return ctx.badRequest(notFoundMessage)
+      if (!userGoalActivity) {
+        return ctx.notFound(notFoundMessage)
       }
 
-      ctx.body = await this.sanitizeOutput(userGoalActivities[0], ctx)
+      ctx.body = await this.sanitizeOutput(userGoalActivity, ctx)
     },
     async update(ctx) {
       deleteRequestBodyProperties(ctx.request.body)
       ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
-      const userGoalActivities = await findUserGoalActivities(strapi, ctx)
+      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
 
-      if (!userGoalActivities[0]) {
-        return ctx.badRequest(notFoundMessage)
+      if (!userGoalActivity) {
+        return ctx.notFound(notFoundMessage)
       }
 
       const entity = await super.update(ctx)
+
+      ctx.body = entity
+    },
+    async delete(ctx) {
+      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
+
+      if (!userGoalActivity) {
+        return ctx.notFound(notFoundMessage)
+      }
+
+      const entity = await super.delete(ctx)
 
       ctx.body = entity
     }
