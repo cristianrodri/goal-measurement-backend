@@ -11,6 +11,9 @@ const {
   trimmedObj
 } = require('@utils/utils')
 
+const deadlineErrorMessage =
+  'Your deadline should be greater than the current time'
+
 const goalNotFound = ctx => {
   ctx.notFound('Goal not found with this related user')
 }
@@ -29,11 +32,22 @@ const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
   return entities[0]
 }
 
+// Verify if the deadline is before than the current time
+const hasIncorrectDeadline = deadline =>
+  deadline && new Date(deadline).getTime() < new Date().getTime()
+
 module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
   async create(ctx) {
-    const goalActivities = ctx.request.body.goalActivities
+    avoidUpdatingSchema(ctx)
+    const { goalActivities: goalActivitiesBody, deadline } = ctx.request.body
+
+    const goalActivities = goalActivitiesBody
 
     delete ctx.request.body.goalActivities
+
+    if (hasIncorrectDeadline(deadline)) {
+      return ctx.badRequest(deadlineErrorMessage)
+    }
 
     const goal = await strapi.entityService.create('api::goal.goal', {
       data: {
@@ -106,10 +120,8 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     // Avoid updating the timestamps and related collections data
     avoidUpdatingSchema(ctx)
 
-    if (deadline && new Date(deadline).getTime() < new Date().getTime()) {
-      return ctx.badRequest(
-        'Your deadline should be greater than the current date'
-      )
+    if (hasIncorrectDeadline(deadline)) {
+      return ctx.badRequest(deadlineErrorMessage)
     }
 
     const entity = await strapi.entityService.update('api::goal.goal', id, {
