@@ -13,7 +13,7 @@ const populate = {
   }
 }
 
-const GOAL_ACTIVITY_API_NAME = ''
+const GOAL_ACTIVITY_API_NAME = 'api::goal-activity.goal-activity'
 const notFoundMessage = 'Goal activity not found'
 
 const findUserGoalActivity = async (strapi, ctx) => {
