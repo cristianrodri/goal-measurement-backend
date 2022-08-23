@@ -109,8 +109,9 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     return sanitizedEntity
   },
   async update(ctx) {
-    const { id } = ctx.params
-    const { deadline } = trimmedObj(ctx.request.body)
+    ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
+
+    const { deadline } = ctx.request.body.data
     const goal = await findUserGoal(strapi, ctx)
 
     if (!goal) {
@@ -124,28 +125,23 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
       return ctx.badRequest(deadlineErrorMessage)
     }
 
-    const entity = await strapi.entityService.update('api::goal.goal', id, {
-      data: {
-        ...trimmedObj(ctx.request.body)
-      }
-    })
+    const {
+      data: { id, attributes }
+    } = await super.update(ctx)
 
-    const sanitizedEntity = await this.sanitizeOutput(entity, ctx)
-
-    return sanitizedEntity
+    ctx.body = { id, ...attributes }
   },
   async delete(ctx) {
-    const { id } = ctx.params
-    const goal = await findUserGoal(strapi, ctx, true)
+    const goal = await findUserGoal(strapi, ctx)
 
     if (!goal) {
       return goalNotFound(ctx)
     }
 
-    const entity = await strapi.entityService.delete('api::goal.goal', id)
+    const {
+      data: { id, attributes }
+    } = await super.delete(ctx)
 
-    const sanitizedEntity = await this.sanitizeOutput(entity, ctx)
-
-    return sanitizedEntity
+    ctx.body = { id, ...attributes }
   }
 }))
