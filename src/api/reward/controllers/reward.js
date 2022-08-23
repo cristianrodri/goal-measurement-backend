@@ -70,11 +70,22 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
       return ctx.notFound(rewardNotFoundMessage)
     }
 
-    const entity = await super.update(ctx)
+    const {
+      data: { id, attributes }
+    } = await super.update(ctx)
+
+    ctx.body = { id, ...attributes }
+  },
+  async delete(ctx) {
+    const userReward = await findRewardUser(strapi, ctx)
+
+    if (!userReward) {
+      return ctx.notFound(rewardNotFoundMessage)
+    }
 
     const {
       data: { id, attributes }
-    } = await this.sanitizeOutput(entity, ctx)
+    } = await super.delete(ctx)
 
     ctx.body = { id, ...attributes }
   }
