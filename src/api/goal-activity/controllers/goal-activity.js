@@ -5,11 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
-const {
-  avoidUpdatingSchema,
-  deleteRequestBodyProperties,
-  trimmedObj
-} = require('@utils/utils')
+const { deleteRequestBodyProperties, trimmedObj } = require('@utils/utils')
 
 const populate = {
   goal: {
@@ -17,27 +13,25 @@ const populate = {
   }
 }
 
+const GOAL_ACTIVITY_API_NAME = ''
 const notFoundMessage = 'Goal activity not found'
 
 const findUserGoalActivity = async (strapi, ctx) => {
-  const entities = await strapi.entityService.findMany(
-    'api::goal-activity.goal-activity',
-    {
-      filters: {
-        id: ctx.params?.id ?? null,
-        user: ctx.state.user
-      },
-      populate
-    }
-  )
+  const entities = await strapi.entityService.findMany(GOAL_ACTIVITY_API_NAME, {
+    filters: {
+      id: ctx.params?.id ?? null,
+      user: ctx.state.user
+    },
+    populate
+  })
 
   return entities[0]
 }
 
-const userGoal = async (strapi, ctx, requestBody) => {
+const userGoal = async (strapi, ctx) => {
   const entities = await strapi.entityService.findMany('api::goal.goal', {
     filters: {
-      id: requestBody?.goal ?? null,
+      id: ctx.request.body?.goal ?? null,
       user: ctx.state.user
     }
   })
@@ -45,82 +39,88 @@ const userGoal = async (strapi, ctx, requestBody) => {
   return entities[0]
 }
 
-module.exports = createCoreController(
-  'api::goal-activity.goal-activity',
-  ({ strapi }) => ({
-    async create(ctx) {
-      avoidUpdatingSchema(ctx)
-      const trimmedRequestBody = trimmedObj(ctx.request.body)
+module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
+  async create(ctx) {
+    const goal = await userGoal(strapi, ctx)
 
-      const goal = await userGoal(strapi, ctx, trimmedRequestBody)
-
-      if (!goal) {
-        return ctx.notFound('Goal id not found')
-      }
-
-      // Add the relation with the authenticated user
-      trimmedRequestBody.user = ctx.state.user
-      const entity = await strapi.entityService.create(
-        'api::goal-activity.goal-activity',
-        {
-          data: {
-            ...trimmedRequestBody
-          }
-        }
-      )
-
-      ctx.body = await this.sanitizeOutput(entity, ctx)
-    },
-    async find(ctx) {
-      const entities = await strapi.entityService.findMany(
-        'api::goal-activity.goal-activity',
-        {
-          filters: {
-            user: ctx.state.user
-          },
-          populate
-        }
-      )
-
-      ctx.body = await this.sanitizeOutput(entities, ctx)
-    },
-    async findOne(ctx) {
-      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
-
-      if (!userGoalActivity) {
-        return ctx.notFound(notFoundMessage)
-      }
-
-      ctx.body = await this.sanitizeOutput(userGoalActivity, ctx)
-    },
-    async update(ctx) {
-      deleteRequestBodyProperties(ctx.request.body)
-      ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
-
-      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
-
-      if (!userGoalActivity) {
-        return ctx.notFound(notFoundMessage)
-      }
-
-      const {
-        data: { id, attributes }
-      } = await super.update(ctx)
-
-      ctx.body = { id, ...attributes }
-    },
-    async delete(ctx) {
-      const userGoalActivity = await findUserGoalActivity(strapi, ctx)
-
-      if (!userGoalActivity) {
-        return ctx.notFound(notFoundMessage)
-      }
-
-      const {
-        data: { id, attributes }
-      } = await super.delete(ctx)
-
-      ctx.body = { id, ...attributes }
+    if (!goal) {
+      return ctx.notFound('Goal id not found')
     }
-  })
-)
+
+    const { data } = ctx.request.body
+
+    const entities = await Promise.all(
+      data.map(async goalActivity => {
+        deleteRequestBodyProperties(goalActivity)
+
+        // Add the relation with the authenticated user
+        goalActivity.user = ctx.state.user
+        goalActivity.goal = goal
+
+        const entity = await strapi.entityService.create(
+          GOAL_ACTIVITY_API_NAME,
+          {
+            data: {
+              ...trimmedObj(goalActivity)
+            }
+          }
+        )
+
+        return entity
+      })
+    )
+
+    ctx.body = await this.sanitizeOutput(entities, ctx)
+  },
+  async find(ctx) {
+    const entities = await strapi.entityService.findMany(
+      GOAL_ACTIVITY_API_NAME,
+      {
+        filters: {
+          user: ctx.state.user
+        },
+        populate
+      }
+    )
+
+    ctx.body = await this.sanitizeOutput(entities, ctx)
+  },
+  async findOne(ctx) {
+    const userGoalActivity = await findUserGoalActivity(strapi, ctx)
+
+    if (!userGoalActivity) {
+      return ctx.notFound(notFoundMessage)
+    }
+
+    ctx.body = await this.sanitizeOutput(userGoalActivity, ctx)
+  },
+  async update(ctx) {
+    deleteRequestBodyProperties(ctx.request.body)
+    ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
+
+    const userGoalActivity = await findUserGoalActivity(strapi, ctx)
+
+    if (!userGoalActivity) {
+      return ctx.notFound(notFoundMessage)
+    }
+
+    const {
+      data: { id, attributes }
+    } = await super.update(ctx)
+
+    ctx.body = { id, ...attributes }
+  },
+  async delete(ctx) {
+    const userGoalActivity = await findUserGoalActivity(strapi, ctx)
+
+    if (!userGoalActivity) {
+      return ctx.notFound(notFoundMessage)
+    }
+
+    const {
+      data: { id, attributes }
+    } = await super.delete(ctx)
+
+    ctx.body = { id, ...attributes }
+  }
+}))
