@@ -5,7 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
-const { trimmedObj } = require('@utils/utils')
+const { trimmedObj, avoidUpdatingSchema } = require('@utils/utils')
 
 const API_NAME = 'api::reward.reward'
 const rewardNotFoundMessage = 'Reward not found'
@@ -59,5 +59,23 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
     }
 
     ctx.body = await this.sanitizeOutput(userReward, ctx)
+  },
+  async update(ctx) {
+    avoidUpdatingSchema(ctx)
+    ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
+
+    const userReward = await findRewardUser(strapi, ctx)
+
+    if (!userReward) {
+      return ctx.notFound(rewardNotFoundMessage)
+    }
+
+    const entity = await super.update(ctx)
+
+    const {
+      data: { id, attributes }
+    } = await this.sanitizeOutput(entity, ctx)
+
+    ctx.body = { id, ...attributes }
   }
 }))
