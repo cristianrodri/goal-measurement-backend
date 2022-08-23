@@ -5,9 +5,21 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
-const { trimmedObj, deleteRequestBodyProperties } = require('@utils/utils')
+const { trimmedObj } = require('@utils/utils')
 
 const API_NAME = 'api::reward.reward'
+const rewardNotFoundMessage = 'Reward not found'
+
+const findRewardUser = async (strapi, ctx) => {
+  const entities = await strapi.entityService.findMany(API_NAME, {
+    filters: {
+      id: ctx.params.id,
+      user: ctx.state.user
+    }
+  })
+
+  return entities[0]
+}
 
 module.exports = createCoreController(API_NAME, ({ strapi }) => ({
   async create(ctx) {
@@ -15,9 +27,6 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
 
     const rewardEntities = await Promise.all(
       rewards.map(async reward => {
-        // Delete unnecessary properties if they are provided
-        deleteRequestBodyProperties(reward)
-
         const entity = await strapi.entityService.create(API_NAME, {
           data: {
             description: reward.trim(),
@@ -31,5 +40,24 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
     )
 
     ctx.body = await this.sanitizeOutput(rewardEntities, ctx)
+  },
+  async find(ctx) {
+    const entities = await strapi.entityService.findMany(API_NAME, {
+      filters: {
+        user: ctx.state.user,
+        ...ctx.query
+      }
+    })
+
+    ctx.body = await this.sanitizeOutput(entities, ctx)
+  },
+  async findOne(ctx) {
+    const userReward = await findRewardUser(strapi, ctx)
+
+    if (!userReward) {
+      return ctx.notFound(rewardNotFoundMessage)
+    }
+
+    ctx.body = await this.sanitizeOutput(userReward, ctx)
   }
 }))
