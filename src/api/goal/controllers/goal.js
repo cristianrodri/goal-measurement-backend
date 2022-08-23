@@ -11,6 +11,8 @@ const {
   trimmedObj
 } = require('@utils/utils')
 
+const GOAL_API_NAME = 'api::goal.goal'
+
 const deadlineErrorMessage =
   'Your deadline should be greater than the current time'
 
@@ -19,7 +21,7 @@ const goalNotFound = ctx => {
 }
 
 const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
-  const entities = await strapi.entityService.findMany('api::goal.goal', {
+  const entities = await strapi.entityService.findMany(GOAL_API_NAME, {
     filters: {
       id: ctx.params.id,
       user: ctx.state.user
@@ -36,7 +38,7 @@ const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
 const hasIncorrectDeadline = deadline =>
   deadline && new Date(deadline).getTime() < new Date().getTime()
 
-module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
+module.exports = createCoreController(GOAL_API_NAME, ({ strapi }) => ({
   async create(ctx) {
     avoidUpdatingSchema(ctx)
     const { goalActivities: goalActivitiesBody, deadline } = ctx.request.body
@@ -49,7 +51,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
       return ctx.badRequest(deadlineErrorMessage)
     }
 
-    const goal = await strapi.entityService.create('api::goal.goal', {
+    const goal = await strapi.entityService.create(GOAL_API_NAME, {
       data: {
         ...trimmedObj(ctx.request.body),
         user: ctx.state.user
@@ -84,7 +86,7 @@ module.exports = createCoreController('api::goal.goal', ({ strapi }) => ({
     ctx.body = { ...sanitizedGoal, goalActivities: goalActivitiesEntities }
   },
   async find(ctx) {
-    const entities = await strapi.entityService.findMany('api::goal.goal', {
+    const entities = await strapi.entityService.findMany(GOAL_API_NAME, {
       filters: {
         user: ctx.state.user
       },
