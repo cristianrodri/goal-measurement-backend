@@ -103,9 +103,11 @@ module.exports = createCoreController(
         return ctx.notFound(notFoundMessage)
       }
 
-      const entity = await super.update(ctx)
+      const {
+        data: { id, attributes }
+      } = await super.update(ctx)
 
-      ctx.body = entity
+      ctx.body = { id, ...attributes }
     },
     async delete(ctx) {
       const userGoalActivity = await findUserGoalActivity(strapi, ctx)
@@ -114,9 +116,11 @@ module.exports = createCoreController(
         return ctx.notFound(notFoundMessage)
       }
 
-      const entity = await super.delete(ctx)
+      const {
+        data: { id, attributes }
+      } = await super.delete(ctx)
 
-      ctx.body = entity
+      ctx.body = { id, ...attributes }
     }
   })
 )
