@@ -15,7 +15,7 @@ const deadlineErrorMessage =
   'Your deadline should be greater than the current time'
 
 const goalNotFound = ctx => {
-  ctx.notFound('Goal not found with this related user')
+  ctx.notFound('Goal not found')
 }
 
 const findUserGoal = async (strapi, ctx, populateGoalActivities = false) => {
