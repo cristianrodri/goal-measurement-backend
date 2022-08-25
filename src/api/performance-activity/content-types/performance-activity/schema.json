@@ -15,7 +15,7 @@
     "done": {
       "type": "boolean",
       "default": false,
-      "required": true
+      "required": false
     },
     "performance": {
       "type": "relation",
