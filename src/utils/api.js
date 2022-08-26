@@ -13,7 +13,8 @@ const getPerformances = async (strapi, ctx, goalId) => {
         performance_activities: {
           fields: ['id', 'description', 'done']
         }
-      }
+      },
+      sort: 'date'
     }
   )
 
