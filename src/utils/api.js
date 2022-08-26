@@ -21,12 +21,12 @@ const getPerformances = async (strapi, ctx, goalId) => {
   return performances
 }
 
-const createPerformance = async (strapi, ctx, relatedGoal, createdGoalDate) => {
-  const day = createdGoalDate.format('dddd').toLowerCase()
+const createPerformance = async (strapi, ctx, relatedGoal, date) => {
+  const day = date.format('dddd').toLowerCase()
 
   const entity = await strapi.entityService.create(PERFORMANCE_API_NAME, {
     data: {
-      date: createdGoalDate.format(),
+      date: date.format(),
       isWorkingDay: relatedGoal.goal_activities.some(activity => activity[day]),
       goal: relatedGoal,
       user: ctx.state.user

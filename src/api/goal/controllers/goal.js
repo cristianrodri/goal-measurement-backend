@@ -5,11 +5,13 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
+const moment = require('moment')
 const {
   avoidUpdatingSchema,
   deleteRequestBodyProperties,
   trimmedObj
 } = require('@utils/utils')
+const { createPerformance } = require('@utils/api')
 
 const GOAL_API_NAME = 'api::goal.goal'
 
@@ -79,6 +81,16 @@ module.exports = createCoreController(GOAL_API_NAME, ({ strapi }) => ({
 
         return entity
       })
+    )
+
+    // Create one performance after the goal is created
+    await createPerformance(
+      strapi,
+      ctx,
+      goal,
+      moment(goal.createdAt)
+        .utcOffset(+ctx.query?.utc)
+        .startOf('day')
     )
 
     const sanitizedGoal = await this.sanitizeOutput(goal, ctx)

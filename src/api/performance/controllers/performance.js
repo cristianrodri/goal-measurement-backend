@@ -6,11 +6,7 @@
 
 const { createCoreController } = require('@strapi/strapi').factories
 const moment = require('moment')
-const {
-  createPerformance,
-  getPerformances,
-  createManyPerformances
-} = require('@utils/api')
+const { getPerformances, createManyPerformances } = require('@utils/api')
 
 module.exports = createCoreController(
   'api::performance.performance',
@@ -50,34 +46,6 @@ module.exports = createCoreController(
       // If the current day is greater than the related goal's deadline, just return the performances
       if (currentDay.isAfter(deadline)) {
         return performances
-      }
-
-      // If the performances length is zero, then create performances from the created date of the related goal until the current day
-      if (performances.length === 0) {
-        const createdGoalDate = moment(relatedGoal.createdAt)
-          .utcOffset(UTC)
-          .startOf('day')
-
-        // Create the performance in the same day of the goal creation
-        const firstPerformance = await createPerformance(
-          strapi,
-          ctx,
-          relatedGoal,
-          createdGoalDate
-        )
-
-        // Add the performance to the performances array
-        performances.push(firstPerformance)
-
-        const previousPerformances = await createManyPerformances(
-          strapi,
-          ctx,
-          relatedGoal,
-          currentDay,
-          createdGoalDate
-        )
-
-        return performances.concat(previousPerformances)
       }
 
       const lastPerformanceDate = performances[performances.length - 1].date
