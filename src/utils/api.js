@@ -65,7 +65,35 @@ const createPerformance = async (strapi, ctx, relatedGoal, createdGoalDate) => {
   return entity
 }
 
+const createManyPerformances = async (
+  strapi,
+  ctx,
+  relatedGoal,
+  currentDay,
+  fromDate
+) => {
+  // If the days diffence between the current day and fromDate is greater than 0, then create the performances related to the remaining days
+  const daysDiff = currentDay.diff(fromDate, 'days')
+
+  const entities = await Promise.all(
+    Array.from({ length: daysDiff }).map(async () => {
+      fromDate.add(1, 'days')
+      const performanceEntities = await createPerformance(
+        strapi,
+        ctx,
+        relatedGoal,
+        fromDate
+      )
+
+      return performanceEntities
+    })
+  )
+
+  return entities
+}
+
 module.exports = {
   createPerformance,
-  getPerformances
+  getPerformances,
+  createManyPerformances
 }

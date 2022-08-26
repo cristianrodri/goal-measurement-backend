@@ -6,7 +6,11 @@
 
 const { createCoreController } = require('@strapi/strapi').factories
 const moment = require('moment')
-const { createPerformance, getPerformances } = require('@utils/api')
+const {
+  createPerformance,
+  getPerformances,
+  createManyPerformances
+} = require('@utils/api')
 
 module.exports = createCoreController(
   'api::performance.performance',
@@ -65,31 +69,37 @@ module.exports = createCoreController(
         // Add the performance to the performances array
         performances.push(firstPerformance)
 
-        // If the days diffence between the current day and the goal's created date is greater than 0, then add the performances related to the remaining days
-        const daysDiff = currentDay.diff(createdGoalDate, 'days')
-
-        const entities = await Promise.all(
-          Array.from({ length: daysDiff }).map(async () => {
-            createdGoalDate.add(1, 'days')
-            const performanceEntities = await createPerformance(
-              strapi,
-              ctx,
-              relatedGoal,
-              createdGoalDate
-            )
-
-            return performanceEntities
-          })
+        const previousPerformances = await createManyPerformances(
+          strapi,
+          ctx,
+          relatedGoal,
+          currentDay,
+          createdGoalDate
         )
 
-        return performances.concat(entities)
+        return performances.concat(previousPerformances)
       }
+
+      const lastPerformanceDate = performances[performances.length - 1].date
 
       // Check if the last performance date belongs to the current day. If that's not true, then create performances relying on the remaining days between the last performance date and the current day
+      const lastPerformanceIsCurrentDay = moment(lastPerformanceDate)
+        .utcOffset(UTC)
+        .isSameOrAfter(currentDay)
 
-      ctx.body = {
-        performances
+      if (lastPerformanceIsCurrentDay) {
+        return performances
       }
+
+      const previousPerformances = await createManyPerformances(
+        strapi,
+        ctx,
+        relatedGoal,
+        currentDay,
+        moment(lastPerformanceDate).utcOffset(UTC).startOf('day')
+      )
+
+      ctx.body = performances.concat(previousPerformances)
     }
   })
 )
