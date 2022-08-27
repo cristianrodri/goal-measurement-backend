@@ -11,8 +11,11 @@ const {
   deleteRequestBodyProperties,
   trimmedObj
 } = require('@utils/utils')
-const { createPerformance, getLastPerformance } = require('@utils/api')
-const { createManyPerformances } = require('../../../utils/api')
+const {
+  createPerformance,
+  getLastPerformance,
+  createManyPerformances
+} = require('@utils/api')
 
 const GOAL_API_NAME = 'api::goal.goal'
 
