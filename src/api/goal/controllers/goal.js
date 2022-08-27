@@ -11,7 +11,8 @@ const {
   deleteRequestBodyProperties,
   trimmedObj
 } = require('@utils/utils')
-const { createPerformance } = require('@utils/api')
+const { createPerformance, getLastPerformance } = require('@utils/api')
+const { createManyPerformances } = require('../../../utils/api')
 
 const GOAL_API_NAME = 'api::goal.goal'
 
@@ -142,6 +143,35 @@ module.exports = createCoreController(GOAL_API_NAME, ({ strapi }) => ({
     const {
       data: { id, attributes }
     } = await super.update(ctx)
+
+    const UTC = +ctx.query?.utc
+    const previousDateline = moment(goal.deadline).utcOffset(UTC).startOf('day')
+    const currentDay = moment().utcOffset(UTC).startOf('day')
+    const newDeadline = moment(attributes.deadline)
+      .utcOffset(UTC)
+      .startOf('day')
+
+    // Create performances if the previous goal deadline was before than current day and check if the deadline has been updated
+    if (
+      currentDay.isAfter(previousDateline) &&
+      currentDay.isSameOrBefore(newDeadline)
+    ) {
+      const lastPerformance = await getLastPerformance(strapi)
+
+      const lastPerformanceDate = moment(lastPerformance[0].date)
+        .utcOffset(UTC)
+        .startOf('day')
+
+      // Create performances from the last performance date + 1 until current day. If the created performance date is greater or equal than previous deadline, isWorkingDay is automatically false and none performance activities will be created because those dates was not planned by the user.
+      await createManyPerformances(
+        strapi,
+        ctx,
+        goal,
+        currentDay,
+        lastPerformanceDate,
+        previousDateline
+      )
+    }
 
     ctx.body = { id, ...attributes }
   },

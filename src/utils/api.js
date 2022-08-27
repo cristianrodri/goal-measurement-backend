@@ -21,13 +21,42 @@ const getPerformances = async (strapi, ctx, goalId) => {
   return performances
 }
 
-const createPerformance = async (strapi, ctx, relatedGoal, date) => {
+const getLastPerformance = async strapi => {
+  const performance = await strapi.entityService.findMany(
+    PERFORMANCE_API_NAME,
+    {
+      sort: {
+        date: 'desc'
+      },
+      limit: 1
+    }
+  )
+
+  return performance
+}
+
+const createPerformance = async (
+  strapi,
+  ctx,
+  relatedGoal,
+  date,
+  previousDateline,
+  currentDay
+) => {
   const day = date.format('dddd').toLowerCase()
+  const checkWorkingDay = relatedGoal.goal_activities.some(
+    activity => activity[day]
+  )
+  const isWorkingDay = previousDateline
+    ? date.isAfter(previousDateline) && date.isBefore(currentDay)
+      ? false
+      : checkWorkingDay
+    : checkWorkingDay
 
   const entity = await strapi.entityService.create(PERFORMANCE_API_NAME, {
     data: {
       date: date.format(),
-      isWorkingDay: relatedGoal.goal_activities.some(activity => activity[day]),
+      isWorkingDay,
       goal: relatedGoal,
       user: ctx.state.user
     },
@@ -36,6 +65,8 @@ const createPerformance = async (strapi, ctx, relatedGoal, date) => {
       performance_activities: true
     }
   })
+
+  if (!isWorkingDay) return entity
 
   const performanceActivities = await Promise.all(
     relatedGoal.goal_activities
@@ -70,7 +101,8 @@ const createManyPerformances = async (
   ctx,
   relatedGoal,
   currentDay,
-  fromDate
+  fromDate,
+  previousDateline
 ) => {
   // If the days diffence between the current day and fromDate is greater than 0, then create the performances related to the remaining days
   const daysDiff = currentDay.diff(fromDate, 'days')
@@ -82,7 +114,9 @@ const createManyPerformances = async (
         strapi,
         ctx,
         relatedGoal,
-        fromDate
+        fromDate,
+        previousDateline,
+        currentDay
       )
 
       return performanceEntities
@@ -95,5 +129,6 @@ const createManyPerformances = async (
 module.exports = {
   createPerformance,
   getPerformances,
-  createManyPerformances
+  createManyPerformances,
+  getLastPerformance
 }
