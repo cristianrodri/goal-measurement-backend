@@ -9,6 +9,7 @@ const deleteRequestBodyProperties = obj => {
   delete obj?.goal_activities
   delete obj?.performances
   delete obj?.performance_activities
+  delete obj?.progress
 
   // User schema
   delete obj?.resetPasswordToken
