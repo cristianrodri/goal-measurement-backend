@@ -68,30 +68,34 @@ module.exports = createCoreController(PERFORMANCE_API_NAME, ({ strapi }) => ({
 
     const allPerformances = performances.concat(previousPerformances)
 
-    // If the created performances is greater than 1, it means that created performances have performances from the previous days
-    if (previousPerformances.length > 1) {
-      // Get all performance expect if the current day performance has progress less than 100. Filter working day performances and calculate the progress and update the progress goal
-      const allWorkingDaysPreviousPerformances = allPerformances.filter(
-        performance =>
+    // Get all working day performances expect if the current day performance is not working day and has progress less than 100.
+    const allWorkingDaysPreviousPerformances = allPerformances.filter(
+      performance =>
+        (moment(performance.date)
+          .utcOffset(UTC)
+          .startOf('day')
+          .isBefore(currentDay) &&
+          performance.isWorkingDay) ||
+        (moment(performance.date)
+          .utcOffset(UTC)
+          .startOf('day')
+          .isSameOrAfter(currentDay) &&
           performance.isWorkingDay &&
-          moment(performance.date)
-            .utcOffset(UTC)
-            .startOf('day')
-            .isBefore(currentDay)
-      )
+          performance.progress === 100)
+    )
 
-      const newProgressGoal =
-        allWorkingDaysPreviousPerformances.reduce(
-          (prev, curr) => prev + curr.progress,
-          0
-        ) / allWorkingDaysPreviousPerformances.length
+    const newProgressGoal =
+      allWorkingDaysPreviousPerformances.reduce(
+        (prev, curr) => prev + curr.progress,
+        0
+      ) / allWorkingDaysPreviousPerformances.length
 
-      await strapi.entityService.update(GOAL_API_NAME, goalId, {
-        data: {
-          progress: Math.round(newProgressGoal)
-        }
-      })
-    }
+    // Update goal progress value
+    await strapi.entityService.update(GOAL_API_NAME, goalId, {
+      data: {
+        progress: Math.round(newProgressGoal)
+      }
+    })
 
     ctx.body = allPerformances
   }
