@@ -80,8 +80,7 @@ module.exports = createCoreController(PERFORMANCE_API_NAME, ({ strapi }) => ({
           .utcOffset(UTC)
           .startOf('day')
           .isSameOrAfter(currentDay) &&
-          performance.isWorkingDay &&
-          performance.progress === 100)
+          performance.isWorkingDay)
     )
 
     const newProgressGoal =

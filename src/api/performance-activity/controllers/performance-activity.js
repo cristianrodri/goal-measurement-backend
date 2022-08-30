@@ -5,6 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories
+const moment = require('moment')
 
 const PERFORMANCE_ACTIVITY_API_NAME =
   'api::performance-activity.performance-activity'
@@ -75,7 +76,7 @@ module.exports = createCoreController(
       )
 
       // Update the related performance progress value
-      await strapi.entityService.update(
+      const updatedPerformance = await strapi.entityService.update(
         'api::performance.performance',
         performanceId,
         {
@@ -85,35 +86,69 @@ module.exports = createCoreController(
         }
       )
 
-      // Get the progress values of the all performances of the related goal and update the current goal progress value with the new average performance values
-      const performancesProgress =
-        userPerformanceActivity[0].goal.performances.map(performance => {
-          if (performance.id === +performanceId) {
-            performance.progress = newPerformanceProgress
+      const UTC = +ctx.query?.utc
+      const currentDay = moment().utcOffset(UTC).startOf('day')
+
+      const previousPerformanceProgress =
+        userPerformanceActivity[0].performance.progress
+      const updatedPerformanceDate = moment(updatedPerformance.date)
+        .utcOffset(UTC)
+        .startOf('day')
+
+      const performanceProgressHasChanged =
+        previousPerformanceProgress !== updatedPerformance.progress
+
+      const currentDayPerformanceHasDescFromCompleted =
+        updatedPerformanceDate.isSameOrAfter(currentDay) &&
+        previousPerformanceProgress === 100 &&
+        updatedPerformance.progress < 100
+
+      if (performanceProgressHasChanged) {
+        // Get the progress values of the all performances of the related goal and update the current goal progress value with the new average performance values
+        const previousPerformances =
+          userPerformanceActivity[0].goal.performances
+
+        const performancesProgress = previousPerformances
+          .filter(
+            performance =>
+              /* AVOID UPDATING GOAL PROGRESS IF THE PERFORMANCE IS THE CURRENT DAY, IS NOT WORKING DAY OR PROGRESS IS LESS THAN 100 */
+              // Also, if previous progress performance was 100, is current day, and the updating is less than 100, then the updated progress goal must not count the current day performance
+              (moment(performance.date)
+                .utcOffset(UTC)
+                .startOf('day')
+                .isBefore(currentDay) &&
+                performance.isWorkingDay) ||
+              updatedPerformance.progress === 100 ||
+              !currentDayPerformanceHasDescFromCompleted
+          )
+          .map(performance => {
+            if (performance.id === +performanceId) {
+              performance.progress = newPerformanceProgress
+
+              return performance.progress
+            }
 
             return performance.progress
-          }
+          })
 
-          return performance.progress
-        })
+        const isWorkingDayPerformances =
+          userPerformanceActivity[0].goal.performances.filter(
+            performance => performance.isWorkingDay
+          )
 
-      const isWorkingDayPerformances =
-        userPerformanceActivity[0].goal.performances.filter(
-          performance => performance.isWorkingDay
+        // Sum all performances progress and divide it by all performance which has isWorkingDay as true
+        const newGoalProgress = Math.round(
+          performancesProgress.reduce((prev, curr) => prev + curr, 0) /
+            isWorkingDayPerformances.length
         )
 
-      // Sum all performances progress and divide it by all performance which has isWorkingDay as true
-      const newGoalProgress = Math.round(
-        performancesProgress.reduce((prev, curr) => prev + curr, 0) /
-          isWorkingDayPerformances.length
-      )
-
-      // Update the related goal progress value
-      await strapi.entityService.update('api::goal.goal', goalId, {
-        data: {
-          progress: newGoalProgress
-        }
-      })
+        // Update the related goal progress value
+        await strapi.entityService.update('api::goal.goal', goalId, {
+          data: {
+            progress: newGoalProgress
+          }
+        })
+      }
 
       ctx.body = updatedPerformanceActivity
     }
