@@ -174,6 +174,45 @@ module.exports = createCoreController(GOAL_API_NAME, ({ strapi }) => ({
         lastPerformanceDate,
         previousDateline
       )
+
+      const allPerformances = await strapi.entityService.findMany(
+        'api::performance.performance',
+        {
+          filters: {
+            goal: id,
+            user: ctx.state.user
+          }
+        }
+      )
+
+      // isWorkingDay AND is before than current day
+      // OR
+      // is current day AND progress is 100
+      const filteredPerformances = allPerformances.filter(
+        performance =>
+          (performance.isWorkingDay &&
+            moment(performance.date)
+              .utcOffset(UTC)
+              .startOf('day')
+              .isBefore(currentDay)) ||
+          (moment(performance.date)
+            .utcOffset(UTC)
+            .startOf('day')
+            .isSameOrAfter(currentDay) &&
+            performance.progress === 100)
+      )
+
+      const newGoalProgress =
+        filteredPerformances.reduce((prev, cur) => prev + cur.progress, 0) /
+        filteredPerformances.length
+
+      const updatedGoal = await strapi.entityService.update(GOAL_API_NAME, id, {
+        data: {
+          progress: Math.round(newGoalProgress)
+        }
+      })
+
+      attributes.progress = updatedGoal.progress
     }
 
     ctx.body = { id, ...attributes }
