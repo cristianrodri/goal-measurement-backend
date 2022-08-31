@@ -21,10 +21,14 @@ const getPerformances = async (strapi, ctx, goalId) => {
   return performances
 }
 
-const getLastPerformance = async strapi => {
-  const performance = await strapi.entityService.findMany(
+const getLastPerformance = async (strapi, ctx, goalId) => {
+  const performances = await strapi.entityService.findMany(
     PERFORMANCE_API_NAME,
     {
+      filters: {
+        goal: +goalId,
+        user: ctx.state.user
+      },
       sort: {
         date: 'desc'
       },
@@ -32,7 +36,7 @@ const getLastPerformance = async strapi => {
     }
   )
 
-  return performance
+  return performances[0]
 }
 
 const createPerformance = async (

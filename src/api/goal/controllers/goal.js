@@ -159,7 +159,7 @@ module.exports = createCoreController(GOAL_API_NAME, ({ strapi }) => ({
       currentDay.isAfter(previousDateline) &&
       currentDay.isSameOrBefore(newDeadline)
     ) {
-      const lastPerformance = await getLastPerformance(strapi)
+      const lastPerformance = await getLastPerformance(strapi, ctx, id)
 
       const lastPerformanceDate = moment(lastPerformance[0].date)
         .utcOffset(UTC)
