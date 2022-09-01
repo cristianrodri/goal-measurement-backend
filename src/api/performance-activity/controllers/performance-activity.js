@@ -103,7 +103,22 @@ module.exports = createCoreController(
         previousPerformanceProgress === 100 &&
         updatedPerformance.progress < 100
 
-      if (performanceProgressHasChanged) {
+      // Performance is before than current day AND Performance progress has changed
+      // OR
+      // If it is current day AND check if performance has changed from 100 to less OR update progress performance is 100
+      if (
+        (moment(performance.date)
+          .utcOffset(UTC)
+          .startOf('day')
+          .isBefore(currentDay) &&
+          performanceProgressHasChanged) ||
+        (moment(performance.date)
+          .utcOffset(UTC)
+          .startOf('day')
+          .isSameOrAfter(currentDay) &&
+          (currentDayPerformanceHasDescFromCompleted ||
+            updatedPerformance.progress === 100))
+      ) {
         // Get the progress values of the all performances of the related goal and update the current goal progress value with the new average performance values
         const previousPerformances =
           userPerformanceActivity[0].goal.performances
