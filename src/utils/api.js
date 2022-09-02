@@ -32,7 +32,15 @@ const getLastPerformance = async (strapi, ctx, goalId) => {
       sort: {
         date: 'desc'
       },
-      limit: 1
+      limit: 1,
+      populate: {
+        performance_activities: true,
+        goal: {
+          populate: {
+            performances: true
+          }
+        }
+      }
     }
   )
 
