@@ -1,3 +1,6 @@
+const { createPerformanceActivity } = require('./performance-activity')
+
+const GOAL_API_NAME = 'api::goal.goal'
 const PERFORMANCE_API_NAME = 'api::performance.performance'
 
 const getPerformances = async (strapi, ctx, goalId) => {
@@ -86,20 +89,15 @@ const createPerformance = async (
       .map(async goalActivity => {
         // Create a new performance activity
 
-        const activityEntity = await strapi.entityService.create(
-          'api::performance-activity.performance-activity',
-          {
-            data: {
-              description: goalActivity.description,
-              goal: relatedGoal,
-              performance: entity,
-              user: ctx.state.user
-            },
-            fields: ['id', 'description', 'done']
-          }
+        const perfomanceActivity = await createPerformanceActivity(
+          strapi,
+          ctx,
+          goalActivity.description,
+          relatedGoal,
+          entity
         )
 
-        return activityEntity
+        return perfomanceActivity
       })
   )
 
@@ -138,9 +136,30 @@ const createManyPerformances = async (
   return entities
 }
 
+const calculatePerformanceProgress = performanceActivities => {
+  const donePerformancesActivities = performanceActivities.filter(
+    perfActivity => perfActivity.done
+  )
+
+  return Math.round(
+    (donePerformancesActivities.length / performanceActivities.length) * 100
+  )
+}
+
+// The performances always receive all performances until the previous days. If the "current day" peformance progress is 100, this will be included. Otherwise, if it is less than 100, it won't be included
+const calculateGoalProgress = performances => {
+  const sum = performances.reduce((prev, cur) => prev + cur.progress, 0)
+
+  return Math.round(sum / performances.length)
+}
+
 module.exports = {
+  calculatePerformanceProgress,
+  calculateGoalProgress,
   createPerformance,
   getPerformances,
   createManyPerformances,
-  getLastPerformance
+  getLastPerformance,
+  GOAL_API_NAME,
+  PERFORMANCE_API_NAME
 }
