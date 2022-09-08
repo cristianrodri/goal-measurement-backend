@@ -7,10 +7,9 @@
 const { createCoreController } = require('@strapi/strapi').factories
 const { deleteRequestBodyProperties, trimmedObj } = require('@utils/utils')
 const {
-  getLastPerformance,
   calculatePerformanceProgress,
   calculateGoalProgress
-} = require('@utils/api')
+} = require('@utils/utils')
 const { getCurrentDay, isLastPerformanceTheCurrentDay } = require('@utils/date')
 const { updatePerformance } = require('@utils/performance')
 const { updateGoal } = require('@utils/goal')
@@ -45,6 +44,7 @@ const findUserGoalActivity = async (strapi, ctx) => {
       id: ctx.params?.id ?? null,
       user: ctx.state.user
     },
+
     populate
   })
 
@@ -56,6 +56,16 @@ const userGoal = async (strapi, ctx) => {
     filters: {
       id: ctx.request.body?.goal ?? null,
       user: ctx.state.user
+    },
+    populate: {
+      performances: {
+        sort: {
+          date: 'desc'
+        },
+        populate: {
+          performance_activities: true
+        }
+      }
     }
   })
 
@@ -94,6 +104,11 @@ const updateGoalProgress = async (strapi, goal, performances, responseData) => {
   responseData.updatedGoal = updatedGoal
 }
 
+const findPerformanceActivityDescription = (performance, description) =>
+  performance.performance_activities.find(
+    perfActivity => perfActivity.description === description
+  )
+
 module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
   async create(ctx) {
     const goal = await userGoal(strapi, ctx)
@@ -105,8 +120,12 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
 
     const { data } = ctx.request.body
 
-    const lastPerformance = await getLastPerformance(strapi, ctx, goal.id)
+    const lastPerformance = goal.performances[0]
     const currentDay = getCurrentDay(clientUTC)
+    const isLastPerformanceCurrentDay = isLastPerformanceTheCurrentDay(
+      lastPerformance,
+      clientUTC
+    )
     const performanceActivities = []
     const responseData = {}
 
@@ -128,10 +147,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
         )
 
         // If the created goal activity has true in current day, create a new performance activity, so long as the last performance is current day
-        if (
-          entity[currentDay] === true &&
-          isLastPerformanceTheCurrentDay(lastPerformance, clientUTC)
-        ) {
+        if (entity[currentDay] === true && isLastPerformanceCurrentDay) {
           // Create a new performance activity with the same description. Add the related goal, performance and user
           const performanceActivity = await createPerformanceActivity(
             strapi,
@@ -151,7 +167,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     responseData.performanceActivities = performanceActivities
 
     // If new performance activities have been created, the progress value of the last performance must be updated, so long as the previous progress value was greater than 0
-    if (lastPerformance.progress > 0) {
+    if (lastPerformance.progress > 0 && isLastPerformanceCurrentDay) {
       const allPerformanceActivities =
         lastPerformance.performance_activities.concat(performanceActivities)
 
@@ -171,12 +187,9 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
 
       responseData.updatedPerformance = updatedPerformance
 
-      // If the previous last performance progress is 100, calculate again the performance progress and update the goal progress value.
+      // If the previous last performance progress is 100, calculate again the performance progress without the current date performance and update the goal progress value.
       if (lastPerformance.progress === 100) {
-        const previousPerformances = lastPerformance.goal.performances.slice(
-          0,
-          -1
-        )
+        const previousPerformances = goal.performances.slice(1)
 
         await updateGoalProgress(
           strapi,
@@ -233,9 +246,9 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     const lastPerformance = previousPerformances[0]
 
     const performanceActivityWithSameDescription =
-      lastPerformance.performance_activities.find(
-        perfActivity =>
-          perfActivity.description === userGoalActivity.description
+      findPerformanceActivityDescription(
+        lastPerformance,
+        userGoalActivity.description
       )
 
     // If the last performance is NOT the current day OR the performance activity with the same description is not found, just return the updated goal activity
@@ -270,64 +283,12 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     }
 
     if (hasChangedFromTrueToFalse && performanceActivityWithSameDescription) {
-      // Delete the performance activity with the same description
-      const deletedPerfActivity = await deletePerformanceActivity(
+      await deletePerformanceActivity(
         strapi,
-        performanceActivityWithSameDescription
-      )
-
-      responseData.deletedPerformanceActivity = deletedPerfActivity
-
-      const currentPerformanceActivities =
-        lastPerformance.performance_activities.filter(
-          perfActivity => perfActivity.id !== deletedPerfActivity.id
-        )
-      // New performance progress after a performance activity is deleted
-      const newProgressPerformance = calculatePerformanceProgress(
-        currentPerformanceActivities
-      )
-
-      // If the previous performance_activities is 1, update isWorkingDay to false and progress to 0
-      if (previousPerformanceActivitiesLength === 1) {
-        const updatedPerformance = await updatePerformance(
-          strapi,
-          lastPerformance.id,
-          {
-            isWorkingDay: false,
-            progress: 0
-          }
-        )
-
-        responseData.updatedPerformance = updatedPerformance
-      }
-
-      // If the previous performance_activities is greater than 1, update the performance progress (ONLY if it's has been changed)
-      await updatePerformanceProgress(
-        strapi,
-        lastPerformance,
-        newProgressPerformance,
+        performanceActivityWithSameDescription,
+        userGoalActivity.goal,
         responseData
       )
-
-      // If the previous last performance (current date) progress is 100 and the current one is less than 100, update goal progress OR if the last performance is less than 100 and the current one is greater than 100
-      if (
-        (lastPerformance.progress === 100 && newProgressPerformance < 100) ||
-        (lastPerformance.progress < 100 && newProgressPerformance === 100)
-      ) {
-        // If the progress comes from 100 to minus, slice from 1. Otherwise slice from 0
-        const slicedPerformance = lastPerformance.progress === 100 ? 1 : 0
-
-        // If the new progress is 100, update the current day performance progress to 100
-        if (newProgressPerformance === 100)
-          previousPerformances[0].progress = newProgressPerformance
-
-        await updateGoalProgress(
-          strapi,
-          userGoalActivity.goal,
-          previousPerformances.slice(slicedPerformance),
-          responseData
-        )
-      }
     }
 
     if (hasChangedFromFalseToTrue) {
@@ -376,7 +337,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
         await updateGoalProgress(
           strapi,
           userGoalActivity.goal,
-          previousPerformances.slice(previousPerformances[1]),
+          previousPerformances.slice(1),
           responseData
         )
       }
@@ -385,6 +346,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     ctx.body = { id, ...attributes, ...responseData }
   },
   async delete(ctx) {
+    const clientUTC = +ctx.query?.utc
     const userGoalActivity = await findUserGoalActivity(strapi, ctx)
 
     if (!userGoalActivity) {
@@ -395,6 +357,28 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
       data: { id, attributes }
     } = await super.delete(ctx)
 
-    ctx.body = { id, ...attributes }
+    const responseData = {}
+    const performances = userGoalActivity.goal.performances
+    const lastPerformance = performances[0]
+
+    const performanceActivityWithSameDescription =
+      findPerformanceActivityDescription(
+        lastPerformance,
+        userGoalActivity.description
+      )
+
+    // If the last performance belongs to the current date AND the description of the deleted goal activity matches with some of the perfomances activities
+    if (
+      isLastPerformanceTheCurrentDay(lastPerformance, clientUTC) &&
+      performanceActivityWithSameDescription
+    ) {
+      await deletePerformanceActivity(
+        strapi,
+        performanceActivityWithSameDescription,
+        userGoalActivity.goal,
+        responseData
+      )
+    }
+    ctx.body = { id, ...attributes, responseData }
   }
 }))

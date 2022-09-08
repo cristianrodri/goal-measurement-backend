@@ -1,4 +1,4 @@
-const { PERFORMANCE_API_NAME } = require('./api')
+const PERFORMANCE_API_NAME = 'api::performance.performance'
 
 const FIELDS = ['id', 'progress', 'date', 'isWorkingDay']
 

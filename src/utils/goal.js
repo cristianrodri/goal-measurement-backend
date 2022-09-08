@@ -1,4 +1,4 @@
-const { GOAL_API_NAME } = require('./api')
+const GOAL_API_NAME = 'api::goal.goal'
 
 const updateGoal = async (strapi, id, data) => {
   const goal = await strapi.entityService
