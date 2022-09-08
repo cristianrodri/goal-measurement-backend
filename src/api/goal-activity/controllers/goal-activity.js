@@ -333,7 +333,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
       )
 
       // Update the goal progress if the previous performance progress is 100, update the goal progress without counting the udpated performance.
-      if (lastPerformance === 100) {
+      if (lastPerformance.progress === 100) {
         await updateGoalProgress(
           strapi,
           userGoalActivity.goal,
