@@ -1,4 +1,4 @@
-const { createPerformanceActivity } = require('@utils/performance-activity')
+const { createPerformance } = require('./performance')
 
 const GOAL_API_NAME = 'api::goal.goal'
 const PERFORMANCE_API_NAME = 'api::performance.performance'
@@ -50,60 +50,6 @@ const getLastPerformance = async (ctx, goalId) => {
   return performances[0]
 }
 
-const createPerformance = async (
-  ctx,
-  relatedGoal,
-  date,
-  previousDateline,
-  currentDay
-) => {
-  const day = date.format('dddd').toLowerCase()
-  const checkWorkingDay = relatedGoal.goal_activities.some(
-    activity => activity[day]
-  )
-  const isWorkingDay = previousDateline
-    ? date.isAfter(previousDateline) && date.isBefore(currentDay)
-      ? false
-      : checkWorkingDay
-    : checkWorkingDay
-
-  const entity = await strapi.entityService.create(PERFORMANCE_API_NAME, {
-    data: {
-      date: date.format(),
-      isWorkingDay,
-      goal: relatedGoal,
-      user: ctx.state.user
-    },
-    fields: ['id', 'date', 'progress', 'isWorkingDay'],
-    populate: {
-      performance_activities: true
-    }
-  })
-
-  if (!isWorkingDay) return entity
-
-  const performanceActivities = await Promise.all(
-    relatedGoal.goal_activities
-      .filter(activity => activity[day])
-      .map(async goalActivity => {
-        // Create a new performance activity
-
-        const perfomanceActivity = await createPerformanceActivity(
-          ctx,
-          goalActivity.description,
-          relatedGoal,
-          entity
-        )
-
-        return perfomanceActivity
-      })
-  )
-
-  entity.performance_activities = performanceActivities
-
-  return entity
-}
-
 const createManyPerformances = async (
   ctx,
   relatedGoal,
@@ -121,8 +67,7 @@ const createManyPerformances = async (
         ctx,
         relatedGoal,
         fromDate,
-        previousDateline,
-        currentDay
+        previousDateline
       )
 
       return performanceEntities
@@ -133,7 +78,6 @@ const createManyPerformances = async (
 }
 
 module.exports = {
-  createPerformance,
   getPerformances,
   createManyPerformances,
   getLastPerformance,
