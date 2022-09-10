@@ -11,13 +11,7 @@ const PERFORMANCE_ACTIVITY_API_NAME =
 const FIELDS = ['id', 'description', 'done']
 
 // Create Performance Activity
-const createPerformanceActivity = (
-  strapi,
-  ctx,
-  description,
-  goal,
-  performance
-) =>
+const createPerformanceActivity = (ctx, description, goal, performance) =>
   strapi.entityService
     .create(PERFORMANCE_ACTIVITY_API_NAME, {
       data: {
@@ -32,7 +26,6 @@ const createPerformanceActivity = (
 
 // Delete Performance Activity
 const deletePerformanceActivity = async (
-  strapi,
   performanceActivity,
   goal,
   responseData
@@ -104,7 +97,7 @@ const deletePerformanceActivity = async (
         .filter(performance => performance.isWorkingDay)
     )
 
-    const updatedGoal = await updateGoal(strapi, goal.id, {
+    const updatedGoal = await updateGoal(goal.id, {
       progress: newGoalProgress
     })
 
@@ -112,7 +105,7 @@ const deletePerformanceActivity = async (
   }
 }
 
-const updatePerformanceActivity = (strapi, performanceActivity, data) =>
+const updatePerformanceActivity = (performanceActivity, data) =>
   strapi.entityService
     .update(PERFORMANCE_ACTIVITY_API_NAME, performanceActivity.id, {
       data,

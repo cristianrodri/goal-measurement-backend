@@ -22,7 +22,7 @@ module.exports = createCoreController(PERFORMANCE_API_NAME, ({ strapi }) => ({
     }
 
     // Get all performances related to the goal id
-    const performances = await getPerformances(strapi, ctx, goalId)
+    const performances = await getPerformances(ctx, goalId)
 
     // Get the related goal
     const relatedGoal = await strapi.entityService.findOne(
@@ -59,7 +59,6 @@ module.exports = createCoreController(PERFORMANCE_API_NAME, ({ strapi }) => ({
     }
 
     const previousPerformances = await createManyPerformances(
-      strapi,
       ctx,
       relatedGoal,
       currentDay,

@@ -3,7 +3,7 @@ const { createPerformanceActivity } = require('@utils/performance-activity')
 const GOAL_API_NAME = 'api::goal.goal'
 const PERFORMANCE_API_NAME = 'api::performance.performance'
 
-const getPerformances = async (strapi, ctx, goalId) => {
+const getPerformances = async (ctx, goalId) => {
   const performances = await strapi.entityService.findMany(
     PERFORMANCE_API_NAME,
     {
@@ -24,7 +24,7 @@ const getPerformances = async (strapi, ctx, goalId) => {
   return performances
 }
 
-const getLastPerformance = async (strapi, ctx, goalId) => {
+const getLastPerformance = async (ctx, goalId) => {
   const performances = await strapi.entityService.findMany(
     PERFORMANCE_API_NAME,
     {
@@ -51,7 +51,6 @@ const getLastPerformance = async (strapi, ctx, goalId) => {
 }
 
 const createPerformance = async (
-  strapi,
   ctx,
   relatedGoal,
   date,
@@ -90,7 +89,6 @@ const createPerformance = async (
         // Create a new performance activity
 
         const perfomanceActivity = await createPerformanceActivity(
-          strapi,
           ctx,
           goalActivity.description,
           relatedGoal,
@@ -107,7 +105,6 @@ const createPerformance = async (
 }
 
 const createManyPerformances = async (
-  strapi,
   ctx,
   relatedGoal,
   currentDay,
@@ -121,7 +118,6 @@ const createManyPerformances = async (
     Array.from({ length: daysDiff }).map(async () => {
       fromDate.add(1, 'days')
       const performanceEntities = await createPerformance(
-        strapi,
         ctx,
         relatedGoal,
         fromDate,
