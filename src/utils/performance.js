@@ -62,6 +62,34 @@ const createPerformance = async (ctx, goal, date, previousDeadline) => {
   return entity
 }
 
+const createManyPerformances = async (
+  ctx,
+  goal,
+  fromDate,
+  previousDateline
+) => {
+  // If the days diffence between the current day and fromDate is greater than 0, then create the performances related to the remaining days
+  const clientUTC = getClientUTC(ctx)
+  const currentDate = getCurrentDate(clientUTC)
+  const daysDiff = currentDate.diff(fromDate, 'days')
+
+  const entities = await Promise.all(
+    Array.from({ length: daysDiff }).map(async () => {
+      fromDate.add(1, 'days')
+      const performanceEntities = await createPerformance(
+        ctx,
+        goal,
+        fromDate,
+        previousDateline
+      )
+
+      return performanceEntities
+    })
+  )
+
+  return entities
+}
+
 const findUserPerformances = (ctx, goal) =>
   strapi.entityService
     .findMany(PERFORMANCE_API_NAME, {
@@ -72,9 +100,41 @@ const findUserPerformances = (ctx, goal) =>
     })
     .then(res => res)
 
+const getLastPerformance = async (ctx, goalId) => {
+  const performances = await strapi.entityService.findMany(
+    PERFORMANCE_API_NAME,
+    {
+      filters: {
+        goal: +goalId,
+        user: ctx.state.user
+      },
+      sort: {
+        date: 'desc'
+      },
+      limit: 1,
+      populate: {
+        performance_activities: true,
+        goal: {
+          populate: {
+            performances: true
+          }
+        }
+      }
+    }
+  )
+
+  return performances[0]
+}
+
 const updatePerformance = (id, data) =>
   strapi.entityService
     .update(PERFORMANCE_API_NAME, id, { data, fields: FIELDS })
     .then(res => res)
 
-module.exports = { createPerformance, findUserPerformances, updatePerformance }
+module.exports = {
+  createManyPerformances,
+  createPerformance,
+  findUserPerformances,
+  getLastPerformance,
+  updatePerformance
+}

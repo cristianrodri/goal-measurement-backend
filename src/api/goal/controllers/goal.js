@@ -11,7 +11,6 @@ const {
   trimmedObj,
   calculateGoalProgress
 } = require('@utils/utils')
-const { getLastPerformance, createManyPerformances } = require('@utils/api')
 const {
   createGoal,
   findManyGoals,
@@ -22,7 +21,11 @@ const { GOAL_API_NAME } = require('@utils/api_names')
 const { getClientUTC, getCurrentDate, getStartOfDay } = require('@utils/date')
 const { findUserPerformances } = require('@utils/performance')
 const { createGoalActivity } = require('@utils/goal_activity')
-const { createPerformance } = require('@utils/performance')
+const {
+  createManyPerformances,
+  createPerformance,
+  getLastPerformance
+} = require('@utils/performance')
 
 const deadlineErrorMessage =
   'Your deadline should be greater than the current time'
@@ -111,13 +114,13 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
 
     const clientUTC = getClientUTC(ctx)
     const previousDateline = getStartOfDay(goal.deadline, clientUTC)
-    const currentDay = getCurrentDate(clientUTC)
+    const currentDate = getCurrentDate(clientUTC)
     const newDeadline = getStartOfDay(attributes.deadline, clientUTC)
 
     // Create performances if the previous goal deadline was before than current day and check if the deadline has been updated
     if (
-      currentDay.isAfter(previousDateline) &&
-      currentDay.isSameOrBefore(newDeadline)
+      currentDate.isAfter(previousDateline) &&
+      currentDate.isSameOrBefore(newDeadline)
     ) {
       const lastPerformance = await getLastPerformance(ctx, id)
 
@@ -130,7 +133,6 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
       await createManyPerformances(
         ctx,
         goal,
-        currentDay,
         lastPerformanceDate,
         previousDateline
       )
@@ -143,9 +145,9 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
       const filteredPerformances = allPerformances.filter(
         performance =>
           (performance.isWorkingDay &&
-            getStartOfDay(performance.date, clientUTC).isBefore(currentDay)) ||
+            getStartOfDay(performance.date, clientUTC).isBefore(currentDate)) ||
           (getStartOfDay(performance.date, clientUTC).isSameOrAfter(
-            currentDay
+            currentDate
           ) &&
             performance.progress === 100)
       )
