@@ -14,7 +14,7 @@ const {
 const {
   createGoal,
   findManyGoals,
-  findUserGoal,
+  findOneGoal,
   updateGoal
 } = require('@utils/goal')
 const { GOAL_API_NAME } = require('@utils/api_names')
@@ -79,7 +79,7 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
     return sanitizedEntity
   },
   async findOne(ctx) {
-    const goal = await findUserGoal(ctx, {
+    const goal = await findOneGoal(ctx.params.id, ctx, {
       goal_activities: true
     })
 
@@ -95,7 +95,7 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
     ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
     const { deadline } = ctx.request.body.data
-    const goal = await findUserGoal(ctx)
+    const goal = await findOneGoal(ctx.params.id, ctx)
 
     if (!goal) {
       return goalNotFound(ctx)
@@ -162,7 +162,7 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
     ctx.body = { id, ...attributes }
   },
   async delete(ctx) {
-    const goal = await findUserGoal(ctx)
+    const goal = await findOneGoal(ctx.params.id, ctx)
 
     if (!goal) {
       return goalNotFound(ctx)

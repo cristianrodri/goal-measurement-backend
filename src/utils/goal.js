@@ -1,5 +1,5 @@
 const { GOAL_API_NAME } = require('./api_names')
-const { trimmedObj } = require('./utils')
+const { trimmedObj, calculateGoalProgress } = require('./utils')
 
 const createGoal = ctx =>
   strapi.entityService
@@ -23,10 +23,10 @@ const findManyGoals = async ctx =>
     })
     .then(res => res)
 
-const findUserGoal = async (ctx, populate) => {
+const findOneGoal = async (id, ctx, populate) => {
   const entities = await strapi.entityService.findMany(GOAL_API_NAME, {
     filters: {
-      id: ctx.params.id,
+      id,
       user: ctx.state.user
     },
     populate
@@ -43,4 +43,22 @@ const updateGoal = async (id, data) => {
   return goal
 }
 
-module.exports = { createGoal, findManyGoals, findUserGoal, updateGoal }
+const updateGoalProgress = async (goal, performances, responseData) => {
+  const newGoalProgress = calculateGoalProgress(
+    performances.filter(performance => performance.isWorkingDay)
+  )
+
+  const updatedGoal = await updateGoal(goal.id, {
+    progress: newGoalProgress
+  })
+
+  responseData.updatedGoal = updatedGoal
+}
+
+module.exports = {
+  createGoal,
+  findManyGoals,
+  findOneGoal,
+  updateGoal,
+  updateGoalProgress
+}

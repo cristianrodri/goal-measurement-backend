@@ -5,7 +5,9 @@ const {
   getCurrentDate,
   getDay
 } = require('./date')
+const { updateGoalProgress } = require('./goal')
 const { createPerformanceActivity } = require('./performance-activity')
+const { calculatePerformanceProgress } = require('./utils')
 
 const FIELDS = ['id', 'progress', 'date', 'isWorkingDay']
 
@@ -131,10 +133,39 @@ const updatePerformance = (id, data) =>
     .update(PERFORMANCE_API_NAME, id, { data, fields: FIELDS })
     .then(res => res)
 
+const updatePerformanceProgress = async (
+  lastPerformance,
+  performanceActivities,
+  goal,
+  responseData
+) => {
+  const allPerformanceActivities =
+    lastPerformance.performance_activities.concat(performanceActivities)
+
+  const newProgressPerformance = calculatePerformanceProgress(
+    allPerformanceActivities
+  )
+  // If the previous performance progress is different than 0 OR isWorkingDay is false, update the performance progress and update isWorkingDay value to true
+  if (lastPerformance.progress > 0 || lastPerformance.isWorkingDay === false) {
+    const updatedPerformance = await updatePerformance(lastPerformance.id, {
+      progress: newProgressPerformance,
+      isWorkingDay: true
+    })
+
+    responseData.updatedPerformance = updatedPerformance
+
+    // If the previous last performance progress is 100, calculate again the goal progress without the current date performance and update the goal progress value.
+    if (lastPerformance.progress === 100) {
+      await updateGoalProgress(goal, goal.performances.slice(1), responseData)
+    }
+  }
+}
+
 module.exports = {
   createManyPerformances,
   createPerformance,
   findUserPerformances,
   getLastPerformance,
-  updatePerformance
+  updatePerformance,
+  updatePerformanceProgress
 }

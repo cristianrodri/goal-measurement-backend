@@ -16,4 +16,17 @@ const createGoalActivity = async (ctx, goal, data) => {
   return entity
 }
 
-module.exports = { createGoalActivity }
+const findGoalActivity = async (ctx, populate) => {
+  const entities = await strapi.entityService.findMany(GOAL_ACTIVITY_API_NAME, {
+    filters: {
+      id: ctx.params?.id ?? null,
+      user: ctx.state.user
+    },
+
+    populate
+  })
+
+  return entities[0]
+}
+
+module.exports = { createGoalActivity, findGoalActivity }
