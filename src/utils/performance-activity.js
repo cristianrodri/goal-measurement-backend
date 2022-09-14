@@ -3,7 +3,7 @@ const {
   calculateGoalProgress
 } = require('@utils/utils')
 const { updateGoal } = require('@utils/goal')
-const { updatePerformance } = require('@utils/performance')
+const { updatePerformance } = require('./api')
 
 const PERFORMANCE_ACTIVITY_API_NAME =
   'api::performance-activity.performance-activity'

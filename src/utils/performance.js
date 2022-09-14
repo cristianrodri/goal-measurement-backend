@@ -1,4 +1,6 @@
+const { updatePerformance } = require('./api')
 const { PERFORMANCE_API_NAME } = require('./api_names')
+const { FIELD_PERFORMANCES } = require('./api_options')
 const {
   getStartOfDay,
   getClientUTC,
@@ -8,8 +10,6 @@ const {
 const { updateGoalProgress } = require('./goal')
 const { createPerformanceActivity } = require('./performance-activity')
 const { calculatePerformanceProgress } = require('./utils')
-
-const FIELDS = ['id', 'progress', 'date', 'isWorkingDay']
 
 const createPerformance = async (ctx, goal, date, previousDeadline) => {
   // Client utc should be provided by ctx.query.utc
@@ -34,7 +34,7 @@ const createPerformance = async (ctx, goal, date, previousDeadline) => {
       goal,
       user: ctx.state.user
     },
-    fields: FIELDS,
+    fields: FIELD_PERFORMANCES,
     populate: {
       performance_activities: true
     }
@@ -128,11 +128,6 @@ const getLastPerformance = async (ctx, goalId) => {
   return performances[0]
 }
 
-const updatePerformance = (id, data) =>
-  strapi.entityService
-    .update(PERFORMANCE_API_NAME, id, { data, fields: FIELDS })
-    .then(res => res)
-
 const updatePerformanceProgress = async (
   lastPerformance,
   performanceActivities,
@@ -166,6 +161,5 @@ module.exports = {
   createPerformance,
   findUserPerformances,
   getLastPerformance,
-  updatePerformance,
   updatePerformanceProgress
 }
