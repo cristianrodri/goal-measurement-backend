@@ -48,6 +48,8 @@ const updateGoalProgress = async (goal, performances, responseData) => {
     performances.filter(performance => performance.isWorkingDay)
   )
 
+  if (goal.progress === newGoalProgress) return
+
   const updatedGoal = await updateGoal(goal.id, {
     progress: newGoalProgress
   })

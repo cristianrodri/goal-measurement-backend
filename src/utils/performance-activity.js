@@ -4,13 +4,10 @@ const {
 } = require('@utils/utils')
 const { updateGoal } = require('@utils/goal')
 const { updatePerformance } = require('./api')
+const { PERFORMANCE_ACTIVITY_API_NAME } = require('./api_names')
+const { FIELD_PERFORMANCE_ACTIVITIES } = require('./api_options')
 
-const PERFORMANCE_ACTIVITY_API_NAME =
-  'api::performance-activity.performance-activity'
-
-const FIELDS = ['id', 'description', 'done']
-
-// Create Performance Activity
+// Create performance activity
 const createPerformanceActivity = (ctx, description, goal, performance) =>
   strapi.entityService
     .create(PERFORMANCE_ACTIVITY_API_NAME, {
@@ -20,7 +17,7 @@ const createPerformanceActivity = (ctx, description, goal, performance) =>
         performance,
         user: ctx.state.user
       },
-      fields: FIELDS
+      fields: FIELD_PERFORMANCE_ACTIVITIES
     })
     .then(res => res)
 
@@ -34,7 +31,7 @@ const deletePerformanceActivity = async (
     PERFORMANCE_ACTIVITY_API_NAME,
     performanceActivity.id,
     {
-      fields: FIELDS
+      fields: FIELD_PERFORMANCE_ACTIVITIES
     }
   )
 
@@ -105,16 +102,39 @@ const deletePerformanceActivity = async (
   }
 }
 
+// Find one performance activity
+const findOnePerformanceActivity = async (
+  id,
+  performanceId,
+  goalId,
+  ctx,
+  populate
+) =>
+  strapi.entityService
+    .findMany(PERFORMANCE_ACTIVITY_API_NAME, {
+      filters: {
+        id,
+        performance: performanceId,
+        goal: goalId,
+        user: ctx.state.user
+      },
+      fields: FIELD_PERFORMANCE_ACTIVITIES,
+      populate
+    })
+    .then(res => res[0])
+
+// Update performance activity
 const updatePerformanceActivity = (performanceActivity, data) =>
   strapi.entityService
     .update(PERFORMANCE_ACTIVITY_API_NAME, performanceActivity.id, {
       data,
-      fields: FIELDS
+      fields: FIELD_PERFORMANCE_ACTIVITIES
     })
     .then(res => res)
 
 module.exports = {
   createPerformanceActivity,
   deletePerformanceActivity,
+  findOnePerformanceActivity,
   updatePerformanceActivity
 }
