@@ -72,16 +72,17 @@ const createManyPerformances = async (
 ) => {
   // If the days diffence between the current day and fromDate is greater than 0, then create the performances related to the remaining days
   const clientUTC = getClientUTC(ctx)
+  const date = getStartOfDay(fromDate, clientUTC)
   const currentDate = getCurrentDate(clientUTC)
-  const daysDiff = currentDate.diff(fromDate, 'days')
+  const daysDiff = currentDate.diff(date, 'days')
 
   const entities = await Promise.all(
     Array.from({ length: daysDiff }).map(async () => {
-      fromDate.add(1, 'days')
+      date.add(1, 'days')
       const performanceEntities = await createPerformance(
         ctx,
         goal,
-        fromDate,
+        date,
         previousDateline
       )
 
