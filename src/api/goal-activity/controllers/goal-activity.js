@@ -21,18 +21,20 @@ const {
 const { createGoalActivity, findGoalActivity } = require('@utils/goal_activity')
 const { GOAL_ACTIVITY_API_NAME } = require('@utils/api_names')
 
-const populateFindGoalActivity = {
-  goal: {
+const populateDescPerformances = {
+  performances: {
+    sort: {
+      date: 'desc'
+    },
     populate: {
-      performances: {
-        sort: {
-          date: 'desc'
-        },
-        populate: {
-          performance_activities: true
-        }
-      }
+      performance_activities: true
     }
+  }
+}
+
+const populateGoal = {
+  goal: {
+    populate: populateDescPerformances
   }
 }
 
@@ -43,17 +45,11 @@ const findPerformanceActivityDescription = (performance, description) =>
     perfActivity => perfActivity.description === description
   )
 
-module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
+module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, () => ({
   async create(ctx) {
     const goal = await findOneGoal(ctx.request.body?.goal ?? null, ctx, {
-      performances: {
-        sort: {
-          date: 'desc'
-        },
-        populate: {
-          performance_activities: true
-        }
-      }
+      goal_activities: true,
+      ...populateDescPerformances
     })
 
     if (!goal) {
@@ -61,6 +57,18 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     }
 
     const { data } = ctx.request.body
+
+    // Find if some of the description of the body data is already used in some of the goal activities
+    const foundGoalActivity = goal.goal_activities.find(goalActivity =>
+      data.some(d => d.description.trim() === goalActivity.description.trim())
+    )
+
+    if (foundGoalActivity) {
+      return ctx.badRequest(
+        `${foundGoalActivity.description} is already used with this goal`
+      )
+    }
+
     const clientUTC = getClientUTC(ctx)
 
     const lastPerformance = goal.performances[0]
@@ -112,18 +120,6 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
       ...responseData
     }
   },
-  async find(ctx) {
-    const entities = await strapi.entityService.findMany(
-      GOAL_ACTIVITY_API_NAME,
-      {
-        filters: {
-          user: ctx.state.user
-        }
-      }
-    )
-
-    ctx.body = await this.sanitizeOutput(entities, ctx)
-  },
   async findOne(ctx) {
     const goalActivity = await findGoalActivity(ctx)
 
@@ -138,7 +134,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
     ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
     const clientUTC = +ctx.query?.utc
 
-    const goalActivity = await findGoalActivity(ctx, populateFindGoalActivity)
+    const goalActivity = await findGoalActivity(ctx, populateGoal)
 
     if (!goalActivity) {
       return ctx.notFound(notFoundMessage)
@@ -215,7 +211,7 @@ module.exports = createCoreController(GOAL_ACTIVITY_API_NAME, ({ strapi }) => ({
   },
   async delete(ctx) {
     const clientUTC = +ctx.query?.utc
-    const goalActivity = await findGoalActivity(ctx, populateFindGoalActivity)
+    const goalActivity = await findGoalActivity(ctx, populateGoal)
 
     if (!goalActivity) {
       return ctx.notFound(notFoundMessage)
