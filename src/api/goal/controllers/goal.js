@@ -19,12 +19,10 @@ const {
 } = require('@utils/goal')
 const { GOAL_API_NAME } = require('@utils/api_names')
 const { getClientUTC, getCurrentDate, getStartOfDay } = require('@utils/date')
-const { findUserPerformances } = require('@utils/performance')
 const { createGoalActivity } = require('@utils/goal_activity')
 const {
   createManyPerformances,
-  createPerformance,
-  getLastPerformance
+  createPerformance
 } = require('@utils/performance')
 
 const deadlineErrorMessage =
@@ -95,7 +93,9 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
     ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
     const { deadline } = ctx.request.body.data
-    const goal = await findOneGoal(ctx.params.id, ctx)
+    const goal = await findOneGoal(ctx.params.id, ctx, {
+      performances: true
+    })
 
     if (!goal) {
       return goalNotFound(ctx)
@@ -122,7 +122,7 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
       currentDate.isAfter(previousDateline) &&
       currentDate.isSameOrBefore(newDeadline)
     ) {
-      const lastPerformance = await getLastPerformance(ctx, id)
+      const lastPerformance = goal.performances[goal.performances.length - 1]
 
       const lastPerformanceDate = getStartOfDay(
         lastPerformance[0].date,
@@ -137,7 +137,7 @@ module.exports = createCoreController(GOAL_API_NAME, () => ({
         previousDateline
       )
 
-      const allPerformances = await findUserPerformances(ctx, goal)
+      const allPerformances = goal.performances
 
       // isWorkingDay AND is before than current day
       // OR
