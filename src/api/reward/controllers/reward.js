@@ -6,53 +6,30 @@
 
 const { createCoreController } = require('@strapi/strapi').factories
 const { trimmedObj, avoidUpdatingSchema } = require('@utils/utils')
+const { REWARD_API_NAME } = require('@utils/api_names')
+const {
+  createManyRewards,
+  findManyRewards,
+  findOneReward
+} = require('@utils/reward')
 
-const API_NAME = 'api::reward.reward'
 const rewardNotFoundMessage = 'Reward not found'
 
-const findRewardUser = async ctx => {
-  const entities = await strapi.entityService.findMany(API_NAME, {
-    filters: {
-      id: ctx.params.id,
-      user: ctx.state.user
-    }
-  })
-
-  return entities[0]
-}
-
-module.exports = createCoreController(API_NAME, ({ strapi }) => ({
+module.exports = createCoreController(REWARD_API_NAME, () => ({
   async create(ctx) {
     const { rewards, type } = trimmedObj(ctx.request.body)
 
-    const rewardEntities = await Promise.all(
-      rewards.map(async reward => {
-        const entity = await strapi.entityService.create(API_NAME, {
-          data: {
-            description: reward.trim(),
-            type,
-            user: ctx.state.user
-          }
-        })
-
-        return entity
-      })
-    )
+    const rewardEntities = await createManyRewards(ctx, rewards, type)
 
     ctx.body = await this.sanitizeOutput(rewardEntities, ctx)
   },
   async find(ctx) {
-    const entities = await strapi.entityService.findMany(API_NAME, {
-      filters: {
-        user: ctx.state.user,
-        ...ctx.query
-      }
-    })
+    const entities = await findManyRewards(ctx)
 
     ctx.body = await this.sanitizeOutput(entities, ctx)
   },
   async findOne(ctx) {
-    const userReward = await findRewardUser(ctx)
+    const userReward = await findOneReward(ctx)
 
     if (!userReward) {
       return ctx.notFound(rewardNotFoundMessage)
@@ -64,7 +41,7 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
     avoidUpdatingSchema(ctx)
     ctx.request.body = { data: { ...trimmedObj(ctx.request.body) } }
 
-    const userReward = await findRewardUser(ctx)
+    const userReward = await findOneReward(ctx)
 
     if (!userReward) {
       return ctx.notFound(rewardNotFoundMessage)
@@ -77,7 +54,7 @@ module.exports = createCoreController(API_NAME, ({ strapi }) => ({
     ctx.body = { id, ...attributes }
   },
   async delete(ctx) {
-    const userReward = await findRewardUser(ctx)
+    const userReward = await findOneReward(ctx)
 
     if (!userReward) {
       return ctx.notFound(rewardNotFoundMessage)
