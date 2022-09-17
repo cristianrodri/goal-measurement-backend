@@ -6,7 +6,11 @@
 
 const { createCoreController } = require('@strapi/strapi').factories
 const { deleteRequestBodyProperties, trimmedObj } = require('@utils/utils')
-const { getCurrentDay, isLastPerformanceTheCurrentDay } = require('@utils/date')
+const {
+  getClientUTC,
+  getCurrentDay,
+  isLastPerformanceTheCurrentDay
+} = require('@utils/date')
 const { updatePerformanceProgress } = require('@utils/performance')
 const { findOneGoal } = require('@utils/goal')
 const {
@@ -16,7 +20,6 @@ const {
 } = require('@utils/performance-activity')
 const { createGoalActivity, findGoalActivity } = require('@utils/goal_activity')
 const { GOAL_ACTIVITY_API_NAME } = require('@utils/api_names')
-const { getClientUTC } = require('../../../utils/date')
 
 const populateFindGoalActivity = {
   goal: {
