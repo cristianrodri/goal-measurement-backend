@@ -99,6 +99,11 @@
       "relation": "oneToMany",
       "target": "api::performance-activity.performance-activity",
       "mappedBy": "user"
+    },
+    "avatar": {
+      "allowedTypes": ["images"],
+      "type": "media",
+      "multiple": false
     }
   }
 }
