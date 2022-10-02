@@ -4,14 +4,16 @@ const utils = require('@strapi/utils')
 
 const { ValidationError } = utils.errors
 
-const hasUserTheAvatarId = async (ctx, avatarId) => {
-  const user = await getService('user').fetch(ctx.state.user.id, {
+const getUserWithAvatar = async ctx => {
+  return await getService('user').fetch(ctx.state.user.id, {
     populate: {
       avatar: true
     }
   })
+}
 
-  if (user.avatar.id !== +avatarId)
+const hasUserTheAvatarId = async (userAvatar, avatarId) => {
+  if (userAvatar.id !== +avatarId)
     throw new ValidationError('Query id is not related with the user avatar id')
 }
 
@@ -22,8 +24,17 @@ module.exports = plugin => {
       request: { files: { files } = {} }
     } = ctx
 
-    if (id) {
-      await hasUserTheAvatarId(ctx, id)
+    const user = await getUserWithAvatar(ctx)
+
+    if (id && user.avatar) {
+      await hasUserTheAvatarId(user.avatar, id)
+    }
+
+    // If the query is is not provided AND the user has already an avatar, return an error message
+    if (!id && user.avatar) {
+      throw new ValidationError(
+        'User has already an avatar. If you want to update an existing avatar, please add a query id'
+      )
     }
 
     if (files.size > 1_000_000)
