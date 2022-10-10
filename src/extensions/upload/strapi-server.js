@@ -12,12 +12,14 @@ const getUserWithAvatar = async ctx => {
   })
 }
 
-const hasUserTheAvatarId = async (userAvatar, avatarId) => {
+const hasUserTheAvatarId = (userAvatar, avatarId) => {
   if (userAvatar.id !== +avatarId)
     throw new ValidationError('Query id is not related with the user avatar id')
 }
 
 module.exports = plugin => {
+  const destroy = plugin.controllers['content-api'].destroy
+
   plugin.controllers['content-api'].upload = async ctx => {
     const {
       query: { id },
@@ -27,13 +29,13 @@ module.exports = plugin => {
     const user = await getUserWithAvatar(ctx)
 
     if (id && user.avatar) {
-      await hasUserTheAvatarId(user.avatar, id)
+      hasUserTheAvatarId(user.avatar, id)
     }
 
-    // If the query is is not provided AND the user has already an avatar, return an error message
+    // If the query id is not provided AND the user has already an avatar, return an error message
     if (!id && user.avatar) {
       throw new ValidationError(
-        'User has already an avatar. If you want to update an existing avatar, please add a query id'
+        'User has already an avatar. If you want to update an existing avatar, please add the avatar id as query id'
       )
     }
 
@@ -54,6 +56,17 @@ module.exports = plugin => {
     await (id
       ? plugin.controllers['content-api'].replaceFile
       : plugin.controllers['content-api'].uploadFiles)(ctx)
+  }
+
+  plugin.controllers['content-api'].destroy = async ctx => {
+    const user = await getUserWithAvatar(ctx)
+
+    // If the user avatar id doesn't exist OR doesn't match with the avatar id provided by ctx.query.id, the avatar with the query id can't be deleted
+    if (!user.avatar?.id || user.avatar.id !== +ctx.params.id) {
+      return ctx.unauthorized('Cannot delete the avatar with the provided id')
+    }
+
+    await destroy(ctx)
   }
 
   return plugin
