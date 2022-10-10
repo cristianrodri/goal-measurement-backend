@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const { getService } = require('@strapi/plugin-users-permissions/server/utils')
 const utils = require('@strapi/utils')
 
@@ -19,7 +18,9 @@ const hasUserTheAvatarId = (userAvatar, avatarId) => {
 
 module.exports = plugin => {
   const destroy = plugin.controllers['content-api'].destroy
+  const upload = plugin.controllers['content-api'].upload
 
+  // Upload or update the user avatar
   plugin.controllers['content-api'].upload = async ctx => {
     const {
       query: { id },
@@ -45,19 +46,10 @@ module.exports = plugin => {
     // Relate the refId with the authenticated user id
     ctx.request.body.refId = ctx.state.user.id
 
-    if (id && (_.isEmpty(files) || files.size === 0)) {
-      return plugin.controllers['content-api'].updateFileInfo(ctx)
-    }
-
-    if (_.isEmpty(files) || files.size === 0) {
-      throw new ValidationError('Files are empty')
-    }
-
-    await (id
-      ? plugin.controllers['content-api'].replaceFile
-      : plugin.controllers['content-api'].uploadFiles)(ctx)
+    await upload(ctx)
   }
 
+  // Delete the user avatar
   plugin.controllers['content-api'].destroy = async ctx => {
     const user = await getUserWithAvatar(ctx)
 
