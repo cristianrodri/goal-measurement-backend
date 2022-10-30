@@ -11,6 +11,7 @@ const utils = require('@strapi/utils')
 const crypto = require('crypto')
 const _ = require('lodash')
 const { avoidUpdatingSchema, trimmedObj } = require('@utils/utils')
+const { deleteAllUserData } = require('@utils/delete_all')
 
 const { sanitize } = utils
 const { ApplicationError, ValidationError } = utils.errors
@@ -424,13 +425,19 @@ module.exports = plugin => {
   // Delete user controller
   plugin.controllers.user.destroy = async ctx => {
     // Verify if the params id owns to the authenticated user
-    if (isNotOwnUser(ctx.state, ctx.params)) return ctx.forbidden()
+    if (isNotOwnUser(ctx.state, ctx.params))
+      return ctx.forbidden(
+        `The provided param id doesn't match with the authenticated user id`
+      )
 
     const { id } = ctx.params
 
-    await getService('user').remove({ id })
+    // Delete all related user data
+    await deleteAllUserData(ctx.state.user)
 
-    ctx.send({ success: true })
+    const user = await getService('user').remove({ id })
+
+    ctx.send({ success: true, user })
   }
 
   // Update email confirmation route
