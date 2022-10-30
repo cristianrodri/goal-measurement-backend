@@ -1,3 +1,5 @@
+const { deleteMany, findManyByGoal } = require('@utils/api')
+
 const GOAL_ACTIVITY_UID = 'api::goal-activity.goal-activity'
 const PERFORMANCE_UID = 'api::performance.performance'
 const PERFORMANCE_ACTIVITY_UID =
@@ -5,30 +7,21 @@ const PERFORMANCE_ACTIVITY_UID =
 
 module.exports = {
   async beforeDelete(event) {
-    const findMany = async uid => {
-      const entities = await strapi.entityService.findMany(uid, {
-        filters: {
-          goal: event.params.where.id
-        },
-        fields: ['id']
-      })
-
-      return entities.map(entity => entity.id)
-    }
-
-    const deleteMany = async (uid, ids) =>
-      await strapi.db.query(uid).deleteMany({
-        where: {
-          id: ids
-        }
-      })
-
     // Get all related ids "goal activities" from the goal
-    const goalActivitiesIds = await findMany(GOAL_ACTIVITY_UID)
+    const goalActivitiesIds = await findManyByGoal(
+      GOAL_ACTIVITY_UID,
+      event.params.where.id
+    )
     // Get all related ids "performances" from the goal
-    const performancesIds = await findMany(PERFORMANCE_UID)
+    const performancesIds = await findManyByGoal(
+      PERFORMANCE_UID,
+      event.params.where.id
+    )
     // Get all related ids "performances activities" from the goal
-    const performanceActivitiesIds = await findMany(PERFORMANCE_ACTIVITY_UID)
+    const performanceActivitiesIds = await findManyByGoal(
+      PERFORMANCE_ACTIVITY_UID,
+      event.params.where.id
+    )
 
     // Delete all related "goal activities" before the goal is deleted
     await deleteMany(GOAL_ACTIVITY_UID, goalActivitiesIds)
