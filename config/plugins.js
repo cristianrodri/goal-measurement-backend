@@ -11,5 +11,12 @@ module.exports = ({ env }) => ({
         testAddress: env('SENDGRID_EMAIL')
       }
     }
+  },
+  'users-permissions': {
+    config: {
+      jwt: {
+        expiresIn: '1d'
+      }
+    }
   }
 })
