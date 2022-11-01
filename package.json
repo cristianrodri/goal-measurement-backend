@@ -23,6 +23,7 @@
     "@strapi/plugin-i18n": "4.2.3",
     "@strapi/plugin-users-permissions": "4.2.3",
     "@strapi/provider-email-sendgrid": "^4.2.3",
+    "@strapi/provider-upload-cloudinary": "^4.4.5",
     "@strapi/strapi": "4.2.3",
     "better-sqlite3": "7.4.6",
     "module-alias": "^2.2.2"
