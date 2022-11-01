@@ -18,7 +18,6 @@ const hasUserTheAvatarId = (userAvatar, avatarId) => {
 
 module.exports = plugin => {
   const destroy = plugin.controllers['content-api'].destroy
-  const upload = plugin.controllers['content-api'].upload
 
   // Upload or update the user avatar
   plugin.controllers['content-api'].upload = async ctx => {
@@ -46,7 +45,9 @@ module.exports = plugin => {
     // Relate the refId with the authenticated user id
     ctx.request.body.refId = ctx.state.user.id
 
-    await upload(ctx)
+    await (id
+      ? plugin.controllers['content-api'].replaceFile
+      : plugin.controllers['content-api'].uploadFiles)(ctx)
   }
 
   // Delete the user avatar
